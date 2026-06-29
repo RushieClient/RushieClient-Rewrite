@@ -2606,6 +2606,8 @@ if(CLIENT)
     components/spectator.h
     components/statboard.cpp
     components/statboard.h
+    components/rclient/rclient.cpp
+    components/rclient/rclient.h
     components/tclient/bg_draw.cpp
     components/tclient/bg_draw.h
     components/tclient/bg_draw_file.cpp

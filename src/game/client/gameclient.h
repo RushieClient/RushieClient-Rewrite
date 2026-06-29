@@ -65,6 +65,11 @@
 #include "components/sounds.h"
 #include "components/spectator.h"
 #include "components/statboard.h"
+
+//RClient
+#include "components/rclient/rclient.h"
+
+//TClient
 #include "components/tclient/bg_draw.h"
 #include "components/tclient/bindchat.h"
 #include "components/tclient/bindwheel.h"
@@ -162,6 +167,7 @@ class CGameClient : public IGameClient
 {
 public:
 	friend class CTClient;
+	friend class CRClient;
 
 	// all components
 	CInfoMessages m_InfoMessages;
@@ -213,6 +219,9 @@ public:
 	CTooltips m_Tooltips;
 
 	CLocalServer m_LocalServer;
+
+	// RClient
+	CRClient m_RClient;
 
 	// TClient Components
 	CSkinProfiles m_SkinProfiles;

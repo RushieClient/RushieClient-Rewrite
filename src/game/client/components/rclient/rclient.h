@@ -12,6 +12,8 @@ public:
 	void OnMessage(int MsgType, void *pRawMsg) override;
 	void OnConsoleInit() override;
 	void OnRender() override;
+
+	void OnReset() override;
 };
 
 #endif //GAME_CLIENT_COMPONENTS_RCLIENT_RCLIENT_H

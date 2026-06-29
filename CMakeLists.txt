@@ -1647,6 +1647,18 @@ set(EXPECTED_DATA
   menuimages/settings.png
   particles.png
   race_flag.png
+  rclient/audio/nonactive_wakeup.wv
+  rclient/languages/index.txt
+  rclient/languages/russian.txt
+  rclient/menu_afk.png
+  rclient/rclient_big_logo.png
+  rclient/rclient_icon.png
+  rclient/rclient_icon_red.png
+  rclient/rclient_icon_white.png
+  rclient/riactions.png
+  rclient/rihammer.png
+  rclient/rihook.png
+  rclient/spec_afk.png
   shader/pipeline.frag
   shader/pipeline.vert
   shader/prim.frag
@@ -2594,6 +2606,8 @@ if(CLIENT)
     components/players.h
     components/race_demo.cpp
     components/race_demo.h
+    components/rclient/rclient.cpp
+    components/rclient/rclient.h
     components/scoreboard.cpp
     components/scoreboard.h
     components/skins.cpp
@@ -2606,8 +2620,6 @@ if(CLIENT)
     components/spectator.h
     components/statboard.cpp
     components/statboard.h
-    components/rclient/rclient.cpp
-    components/rclient/rclient.h
     components/tclient/bg_draw.cpp
     components/tclient/bg_draw.h
     components/tclient/bg_draw_file.cpp

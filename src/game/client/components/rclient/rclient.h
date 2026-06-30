@@ -41,12 +41,6 @@ class CRClient : public CComponent
 	static void ConTrackerAdd(IConsole::IResult *pResult, void *pUserData);
 	static void ConTrackerRemove(IConsole::IResult *pResult, void *pUserData);
 	static void ConTrackerReset(IConsole::IResult *pResult, void *pUserData);
-	struct SPlayerList
-	{
-		int m_ClientId;
-		std::string m_Nickname;
-	};
-	std::vector<SPlayerList> m_vPlayersInTracker;
 public:
 	CRClient();
 	int Sizeof() const override { return sizeof(*this); }
@@ -58,7 +52,14 @@ public:
 	void OnStateChange(int NewState, int OldState) override;
 
 	//Tracker
-	std::vector<SPlayerList> GetPlayersInTracker() {return m_vPlayersInTracker;};
+	struct SPlayerList
+	{
+		int m_ClientId;
+		std::string m_Nickname;
+	};
+	std::vector<SPlayerList> m_vPlayersInTracker;
+	void TrackerClientIdRemove(int ClientId);
+
 };
 
 #endif //GAME_CLIENT_COMPONENTS_RCLIENT_RCLIENT_H

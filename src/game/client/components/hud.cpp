@@ -1604,11 +1604,13 @@ inline float CHud::GetMovementInformationBoxHeight()
 	float BoxHeight = 0.0f;
 	if(GameClient()->m_Snap.m_SpecInfo.m_Active && (GameClient()->m_Snap.m_SpecInfo.m_SpectatorId == SPEC_FREEVIEW || GameClient()->m_aClients[GameClient()->m_Snap.m_SpecInfo.m_SpectatorId].m_SpecCharPresent))
 	{
+		if(GameClient()->m_RClient.m_vPlayersInTracker.size() > 0) BoxHeight += GameClient()->m_RClient.m_vPlayersInTracker.size() * MOVEMENT_INFORMATION_LINE_HEIGHT * 3.0f;
 		if(g_Config.m_ClShowhudPlayerPosition) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT * 3.0f;
 		if(g_Config.m_ClShowhudPlayerPosition && g_Config.m_TcShowhudDummyPosition && Client()->DummyConnected()) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT * 2.0f;
 	}
 	else
 	{
+		if(GameClient()->m_RClient.m_vPlayersInTracker.size() > 0) BoxHeight += GameClient()->m_RClient.m_vPlayersInTracker.size() * MOVEMENT_INFORMATION_LINE_HEIGHT * 3.0f;
 		if(g_Config.m_ClShowhudPlayerPosition) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT * 3.0f;
 		if(g_Config.m_ClShowhudPlayerPosition && g_Config.m_TcShowhudDummyPosition && Client()->DummyConnected()) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT * 2.0f;
 		if(g_Config.m_ClShowhudPlayerSpeed) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT * 3.0f;
@@ -1721,14 +1723,45 @@ void CHud::RenderMovementInformation()
 
 	Graphics()->DrawRect(StartX, StartY, BoxWidth, BoxHeight, ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_L, 5.0f);
 
-	CMovementInformation DummyInfo{};
 	const CMovementInformation Info = GetMovementInformation(ClientId, g_Config.m_ClDummy);
+	CMovementInformation DummyInfo{};
 	if(ShowDummyInfo)
 		DummyInfo = GetMovementInformation(GameClient()->m_aLocalIds[!g_Config.m_ClDummy], !g_Config.m_ClDummy);
+	bool IsPositionGreen = false;
+	if(Info.m_Pos.x == DummyInfo.m_Pos.x)
+		IsPositionGreen = true;
+
 
 	float y = StartY + LineSpacer * 2.0f;
 	const float LeftX = StartX + 2.0f;
 	const float RightX = m_Width - 2.0f;
+
+	for(size_t i = 0; i < GameClient()->m_RClient.m_vPlayersInTracker.size(); i++)
+	{
+		const int TrackerClientId = GameClient()->m_RClient.m_vPlayersInTracker[i].m_ClientId;
+		if(TrackerClientId < 0 || TrackerClientId >= MAX_CLIENTS || !GameClient()->m_aClients[TrackerClientId].m_Active)
+		{
+			GameClient()->m_RClient.TrackerClientIdRemove(TrackerClientId);
+			continue;
+		}
+		const CMovementInformation TrackerInfo = GetMovementInformation(TrackerClientId, 0);
+		if(Info.m_Pos.x == TrackerInfo.m_Pos.x)
+			IsPositionGreen = true;
+		char aBuf[64];
+		str_format(aBuf, sizeof(aBuf), "%s's Position", GameClient()->m_RClient.m_vPlayersInTracker[i].m_Nickname.c_str());
+		TextRender()->Text(LeftX, y, Fontsize, aBuf, -1.0f);
+		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+		TextRender()->Text(LeftX, y, Fontsize, "X:", -1.0f);
+		str_format(aBuf, sizeof(aBuf), "%.2f", std::round(TrackerInfo.m_Pos.x * 100.0f) / 100.0f);
+		TextRender()->TextColor(Info.m_Pos.x == TrackerInfo.m_Pos.x ? ColorRGBA(0.2f, 1.0f, 0.2f, 1.0f) : TextRender()->DefaultTextColor());
+		TextRender()->Text(RightX - TextRender()->TextWidth(Fontsize, aBuf), y, Fontsize, aBuf, -1.0f);
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+		TextRender()->Text(LeftX, y, Fontsize, "Y:", -1.0f);
+		str_format(aBuf, sizeof(aBuf), "%.2f", std::round(TrackerInfo.m_Pos.y * 100.0f) / 100.0f);
+		TextRender()->Text(RightX - TextRender()->TextWidth(Fontsize, aBuf), y, Fontsize, aBuf, -1.0f);
+		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+	}
 
 	if(g_Config.m_ClShowhudPlayerPosition)
 	{
@@ -1737,7 +1770,7 @@ void CHud::RenderMovementInformation()
 
 		TextRender()->Text(LeftX, y, Fontsize, "X:", -1.0f);
 		UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[0], Fontsize, Info.m_Pos.x, m_aPlayerPrevPosition[0]);
-		RenderMovementInformationTextContainer(m_aPlayerPositionContainers[0], Info.m_Pos.x == DummyInfo.m_Pos.x ? ColorRGBA(0.2f, 1.0f, 0.2f, 1.0f) : TextRender()->DefaultTextColor(), RightX, y);
+		RenderMovementInformationTextContainer(m_aPlayerPositionContainers[0], IsPositionGreen ? ColorRGBA(0.2f, 1.0f, 0.2f, 1.0f) : TextRender()->DefaultTextColor(), RightX, y);
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
 		TextRender()->Text(LeftX, y, Fontsize, "Y:", -1.0f);

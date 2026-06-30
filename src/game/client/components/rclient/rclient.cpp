@@ -477,3 +477,17 @@ void CRClient::ConTrackerReset(IConsole::IResult *pResult, void *pUserData)
 	}
 	pThis->m_vPlayersInTracker.clear();
 }
+
+void CRClient::TrackerClientIdRemove(int ClientId)
+{
+	for(size_t i = 0; i < m_vPlayersInTracker.size(); i++)
+	{
+		if(ClientId == m_vPlayersInTracker[i].m_ClientId)
+		{
+			FastPrint(GameClient(), "Tracker", "Removed player: %s", m_vPlayersInTracker[i].m_Nickname.c_str());
+			FastEcho(GameClient(), "[[red]]Tracker: Removed player: %s", m_vPlayersInTracker[i].m_Nickname.c_str());
+			m_vPlayersInTracker.erase(m_vPlayersInTracker.begin() + i);
+			return;
+		}
+	}
+}

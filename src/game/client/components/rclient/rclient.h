@@ -7,6 +7,7 @@
 
 class CRClient : public CComponent
 {
+	//Find/Copy Skin
 	static void ConFindPlayerFromDdstats(IConsole::IResult *pResult, void *pUserData);
 	static void ConFindSkinFromDdstats(IConsole::IResult *pResult, void *pUserData);
 	static void ConCopySkinFromDdstats(IConsole::IResult *pResult, void *pUserData);
@@ -32,6 +33,9 @@ class CRClient : public CComponent
 	int DummyBodyColorBeforeCopyPlayer = 0;
 	int DummyFeetColorBeforeCopyPlayer = 0;
 
+	//Dummy clan
+	void DummyConnectedClan(bool IsDummyConnected);
+	bool m_DummyConnectedPrevState = false;
 public:
 	CRClient();
 	int Sizeof() const override { return sizeof(*this); }
@@ -39,8 +43,8 @@ public:
 	void OnMessage(int MsgType, void *pRawMsg) override;
 	void OnConsoleInit() override;
 	void OnRender() override;
-
 	void OnReset() override;
+	void OnStateChange(int NewState, int OldState) override;
 };
 
 #endif //GAME_CLIENT_COMPONENTS_RCLIENT_RCLIENT_H

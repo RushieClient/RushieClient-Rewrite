@@ -27,6 +27,8 @@ void CRClient::OnRender()
 		FinishRclientDDstatsProfile();
 		ResetRclientDDstatsProfile();
 	}
+	if(g_Config.m_RcPlayerClanAutoChange)
+		DummyConnectedClan(Client()->DummyConnected());
 }
 
 void CRClient::OnConsoleInit()
@@ -44,6 +46,27 @@ void CRClient::OnConsoleInit()
 void CRClient::OnMessage(int MsgType, void *pRawMsg)
 {
 
+}
+
+void CRClient::OnStateChange(int NewState, int OldState)
+{
+
+}
+
+void CRClient::DummyConnectedClan(const bool IsDummyConnected)
+{
+	if(IsDummyConnected && !m_DummyConnectedPrevState)
+	{
+		m_DummyConnectedPrevState = IsDummyConnected;
+		str_copy(g_Config.m_PlayerClan, g_Config.m_RcPlayerClanWithDummy, sizeof(g_Config.m_PlayerClan));
+		GameClient()->SendInfo(false);
+	}
+	else if(!IsDummyConnected && m_DummyConnectedPrevState)
+	{
+		m_DummyConnectedPrevState = IsDummyConnected;
+		str_copy(g_Config.m_PlayerClan, g_Config.m_RcPlayerClanNoDummy, sizeof(g_Config.m_PlayerClan));
+		GameClient()->SendInfo(false);
+	}
 }
 
 static std::string TrimRight(const char *aInput)

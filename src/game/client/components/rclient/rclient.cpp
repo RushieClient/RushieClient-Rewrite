@@ -78,6 +78,11 @@ static int FindPlayerClientId(CGameClient *pGameClient ,const char *Nickname)
 		return -1;
 }
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif
+
 static void FastPrint(CGameClient *pGameClient, const char *pName, const char *pFmt, ...)
 {
 	char aBuf[256];
@@ -97,6 +102,10 @@ static void FastEcho(CGameClient *pGameClient, const char *pFmt, ...)
 	va_end(Args);
 	pGameClient->Echo(aBuf);
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 //Dummy clan
 void CRClient::DummyConnectedClan(const bool IsDummyConnected)
@@ -164,55 +173,45 @@ void CRClient::FetchRclientDDstatsProfile()
 	Http()->Run(m_pRClientDDstatsTask);
 }
 
-static void DDstatsPrint(IConsole *pConsole, const char *pFmt, ...)
+static void PrintPlayerInfo(CGameClient *pGameClient , const char *Nickname, const char *Skin, const char *Clan, const int Country, const int CustomColor, const int SkinColorBodyint, const int SkinColorFeetint)
 {
-	char aBuf[256];
-	va_list Args;
-	va_start(Args, pFmt);
-	str_format_v(aBuf, sizeof(aBuf), pFmt, Args);
-	va_end(Args);
-	pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", aBuf);
-}
-
-static void PrintPlayerInfo(IConsole *pConsole , const char *Nickname, const char *Skin, const char *Clan, const int Country, const int CustomColor, const int SkinColorBodyint, const int SkinColorFeetint)
-{
-	DDstatsPrint(pConsole ,"- Nickname: %s", Nickname);
-	DDstatsPrint(pConsole ,"- Skin name: %s", Skin);
-	DDstatsPrint(pConsole ,"- Clan: %s", Clan);
-	DDstatsPrint(pConsole ,"- Country: %d", Country);
+	FastPrint(pGameClient , "Info","- Nickname: %s", Nickname);
+	FastPrint(pGameClient , "Info","- Skin name: %s", Skin);
+	FastPrint(pGameClient , "Info","- Clan: %s", Clan);
+	FastPrint(pGameClient , "Info","- Country: %d", Country);
 	if(CustomColor)
 	{
-		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 1");
-		DDstatsPrint(pConsole ,"- Body Color: %d", SkinColorBodyint);
-		DDstatsPrint(pConsole ,"- Feet Color: %d", SkinColorFeetint);
+		pGameClient->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 1");
+		FastPrint(pGameClient , "Info","- Body Color: %d", SkinColorBodyint);
+		FastPrint(pGameClient , "Info","- Feet Color: %d", SkinColorFeetint);
 	}
 	else
-		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 0");
+		pGameClient->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 0");
 }
 
-static void PrintSkinInfo(IConsole *pConsole, const char *Skin, const int CustomColor, const int SkinColorBodyint, const int SkinColorFeetint)
+static void PrintSkinInfo(CGameClient *pGameClient, const char *Skin, const int CustomColor, const int SkinColorBodyint, const int SkinColorFeetint)
 {
-	DDstatsPrint(pConsole ,"- Skin name: %s", Skin);
+	FastPrint(pGameClient , "Info","- Skin name: %s", Skin);
 	if(CustomColor)
 	{
-		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 1");
-		DDstatsPrint(pConsole ,"- Body Color: %d", SkinColorBodyint);
-		DDstatsPrint(pConsole ,"- Feet Color: %d", SkinColorFeetint);
+		pGameClient->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 1");
+		FastPrint(pGameClient , "Info","- Body Color: %d", SkinColorBodyint);
+		FastPrint(pGameClient , "Info","- Feet Color: %d", SkinColorFeetint);
 	}
 	else
-		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 0");
+		pGameClient->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 0");
 }
 
-static void PrintColorInfo(IConsole *pConsole, const int CustomColor, const int SkinColorBodyint, const int SkinColorFeetint)
+static void PrintColorInfo(CGameClient *pGameClient, const int CustomColor, const int SkinColorBodyint, const int SkinColorFeetint)
 {
 	if(CustomColor)
 	{
-		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 1");
-		DDstatsPrint(pConsole ,"- Body Color: %d", SkinColorBodyint);
-		DDstatsPrint(pConsole ,"- Feet Color: %d", SkinColorFeetint);
+		pGameClient->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 1");
+		FastPrint(pGameClient , "Info","- Body Color: %d", SkinColorBodyint);
+		FastPrint(pGameClient , "Info","- Feet Color: %d", SkinColorFeetint);
 	}
 	else
-		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 0");
+		pGameClient->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Info", "- Custom Color: 0");
 }
 
 void CRClient::ApplySkinToPlayer(const char *Skin, const int CustomColor, const int SkinColorBodyint, const int SkinColorFeetint)
@@ -293,12 +292,12 @@ void CRClient::FinishRclientDDstatsProfile()
 		int SkinColorFeetint = SkinColorFeet.u.integer;
 		int CustomColor = SkinColorFeetint != 0 || SkinColorBodyint != 0;
 		if(m_DDstatsSearchType == 1)
-			PrintPlayerInfo(GameClient()->Console(), Nickname.u.string.ptr, Skin.u.string.ptr, Clan.u.string.ptr, Countryint, CustomColor, SkinColorBodyint, SkinColorFeetint);
+			PrintPlayerInfo(GameClient(), Nickname.u.string.ptr, Skin.u.string.ptr, Clan.u.string.ptr, Countryint, CustomColor, SkinColorBodyint, SkinColorFeetint);
 		if(m_DDstatsSearchType == 2)
-			PrintSkinInfo(GameClient()->Console(), Skin.u.string.ptr, CustomColor, SkinColorBodyint, SkinColorFeetint);
+			PrintSkinInfo(GameClient(), Skin.u.string.ptr, CustomColor, SkinColorBodyint, SkinColorFeetint);
 		if(m_DDstatsSearchType == 3)
 		{
-			PrintSkinInfo(GameClient()->Console(), Skin.u.string.ptr, CustomColor, SkinColorBodyint, SkinColorFeetint);
+			PrintSkinInfo(GameClient(), Skin.u.string.ptr, CustomColor, SkinColorBodyint, SkinColorFeetint);
 			ApplySkinToPlayer(Skin.u.string.ptr, CustomColor, SkinColorBodyint, SkinColorFeetint);
 		}
 		m_DDstatsSearchType = 0;
@@ -328,7 +327,7 @@ void CRClient::ConFindSkin(IConsole::IResult *pResult, void *pUserData)
 	const CGameClient::CClientData &ClientData = pThis->GameClient()->m_aClients[ClientId];
 	if(ClientData.m_aSkinName[0])
 	{
-		PrintSkinInfo(pThis->GameClient()->Console(), ClientData.m_aSkinName, ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
+		PrintSkinInfo(pThis->GameClient(), ClientData.m_aSkinName, ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
 	}
 }
 
@@ -345,7 +344,7 @@ void CRClient::ConFindPlayer(IConsole::IResult *pResult, void *pUserData)
 	const CGameClient::CClientData &ClientData = pThis->GameClient()->m_aClients[ClientId];
 	if(ClientData.m_aSkinName[0])
 	{
-		PrintPlayerInfo(pThis->GameClient()->Console(), ClientData.m_aName, ClientData.m_aSkinName, ClientData.m_aClan, ClientData.m_Country, ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
+		PrintPlayerInfo(pThis->GameClient(), ClientData.m_aName, ClientData.m_aSkinName, ClientData.m_aClan, ClientData.m_Country, ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
 	}
 }
 
@@ -362,7 +361,7 @@ void CRClient::ConCopySkin(IConsole::IResult *pResult, void *pUserData)
 	const CGameClient::CClientData &ClientData = pThis->GameClient()->m_aClients[ClientId];
 	if(ClientData.m_aSkinName[0])
 	{
-		PrintSkinInfo(pThis->GameClient()->Console(), ClientData.m_aSkinName, ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
+		PrintSkinInfo(pThis->GameClient(), ClientData.m_aSkinName, ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
 		pThis->ApplySkinToPlayer(ClientData.m_aSkinName, ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
 	}
 }
@@ -380,7 +379,7 @@ void CRClient::ConCopyColor(IConsole::IResult *pResult, void *pUserData)
 	const CGameClient::CClientData &ClientData = pThis->GameClient()->m_aClients[ClientId];
 	if(ClientData.m_aSkinName[0])
 	{
-		PrintColorInfo(pThis->GameClient()->Console(), ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
+		PrintColorInfo(pThis->GameClient(), ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
 		pThis->ApplyColorToPlayer(ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
 	}
 }

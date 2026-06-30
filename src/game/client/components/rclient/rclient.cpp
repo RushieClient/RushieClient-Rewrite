@@ -199,6 +199,7 @@ void CRClient::ApplyColorToPlayer(const int CustomColor, const int SkinColorBody
 {
 	if(g_Config.m_ClDummy == 1)
 	{
+		str_copy(PlayerSkinBeforeCopyPlayer, g_Config.m_ClPlayerSkin, sizeof(PlayerSkinBeforeCopyPlayer));
 		DummyUseCustomColorBeforeCopyPlayer = g_Config.m_ClDummyUseCustomColor;
 		DummyBodyColorBeforeCopyPlayer = g_Config.m_ClDummyColorBody;
 		DummyFeetColorBeforeCopyPlayer = g_Config.m_ClDummyColorFeet;
@@ -209,6 +210,7 @@ void CRClient::ApplyColorToPlayer(const int CustomColor, const int SkinColorBody
 	}
 	if(g_Config.m_ClDummy == 0)
 	{
+		str_copy(PlayerSkinBeforeCopyPlayer, g_Config.m_ClPlayerSkin, sizeof(PlayerSkinBeforeCopyPlayer));
 		PlayerUseCustomColorBeforeCopyPlayer = g_Config.m_ClPlayerUseCustomColor;
 		PlayerBodyColorBeforeCopyPlayer = g_Config.m_ClPlayerColorBody;
 		PlayerFeetColorBeforeCopyPlayer = g_Config.m_ClPlayerColorFeet;
@@ -348,7 +350,7 @@ void CRClient::ConCopyColor(IConsole::IResult *pResult, void *pUserData)
 	if(ClientData.m_aSkinName[0])
 	{
 		PrintColorInfo(pThis->GameClient()->Console(), ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
-		pThis->ApplySkinToPlayer(ClientData.m_aSkinName, ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
+		pThis->ApplyColorToPlayer(ClientData.m_UseCustomColor, ClientData.m_ColorBody, ClientData.m_ColorFeet);
 	}
 }
 

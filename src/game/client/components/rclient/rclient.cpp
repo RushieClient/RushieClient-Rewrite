@@ -44,6 +44,9 @@ void CRClient::OnConsoleInit()
 	Console()->Register("rc_tracker_add", "r[player]", CFGFLAG_CLIENT, ConTrackerAdd, this, "Add player to tracker");
 	Console()->Register("rc_tracker_remove", "r[player]", CFGFLAG_CLIENT, ConTrackerRemove, this, "Remove player from tracker");
 	Console()->Register("rc_tracker_reset", "", CFGFLAG_CLIENT, ConTrackerReset, this, "Reset tracker");
+	Console()->Register("rc_toggle_deepfly", "", CFGFLAG_CLIENT, ConToggleDeepfly, this, "Toggle deepfly");
+	Console()->Register("+rc_small_sens", "", CFGFLAG_CLIENT, ConToggleSmallSens, this, "small sens");
+	Console()->Register("+rc_45degrees", "", CFGFLAG_CLIENT, ConToggle45Degrees, this, "45degrees");
 }
 
 void CRClient::OnMessage(int MsgType, void *pRawMsg)
@@ -52,6 +55,11 @@ void CRClient::OnMessage(int MsgType, void *pRawMsg)
 }
 
 void CRClient::OnStateChange(int NewState, int OldState)
+{
+
+}
+
+void CRClient::OnShutdown()
 {
 
 }
@@ -489,5 +497,193 @@ void CRClient::TrackerClientIdRemove(int ClientId)
 			m_vPlayersInTracker.erase(m_vPlayersInTracker.begin() + i);
 			return;
 		}
+	}
+}
+
+// Binds
+void CRClient::ConToggle45Degrees(IConsole::IResult *pResult, void *pUserData)
+{
+	CRClient *pSelf = static_cast<CRClient *>(pUserData);
+	bool m_45degreestoggle = pResult->GetInteger(0) != 0;
+	if(pSelf->m_SmallSensEnabled)
+	{
+		if(m_45degreestoggle && !pSelf->m_45degreestogglelastinput)
+			pSelf->GameClient()->Echo("[[red]] Cant enable 45 degrees. Small send enabled");
+		pSelf->m_45degreestogglelastinput = m_45degreestoggle;
+		return;
+	}
+	if(g_Config.m_RcToggle45degrees)
+	{
+		if(m_45degreestoggle && !pSelf->m_45degreestogglelastinput)
+		{
+			if(pSelf->m_Small45OldSens == -1)
+			{
+				pSelf->Toggle45Degrees(true);
+			}
+			else
+			{
+				pSelf->Toggle45Degrees(false);
+			}
+		}
+		pSelf->m_45degreestogglelastinput = m_45degreestoggle;
+	}
+	else
+	{
+		if(m_45degreestoggle && !pSelf->m_45degreestogglelastinput)
+		{
+			pSelf->Toggle45Degrees(true);
+		}
+		else if(!m_45degreestoggle)
+		{
+			pSelf->Toggle45Degrees(false);
+		}
+		pSelf->m_45degreestogglelastinput = m_45degreestoggle;
+	}
+}
+void CRClient::Toggle45Degrees(bool Enable)
+{
+	if(Enable)
+	{
+		m_45degreesEnabled = true;
+		if(g_Config.m_Rc45degreesEcho)
+			GameClient()->Echo("[[green]] 45° on");
+		if(m_Small45OldSens == -1)
+			m_Small45OldSens = g_Config.m_InpMousesens;
+		if(m_45degreesDistanceOld == -1)
+			m_45degreesDistanceOld = g_Config.m_ClMouseMaxDistance;
+		g_Config.m_ClMouseMaxDistance = 2;
+		g_Config.m_InpMousesens = 4;
+	}
+	else
+	{
+		m_45degreesEnabled = false;
+		if(g_Config.m_Rc45degreesEcho)
+			GameClient()->Echo("[[red]] 45° off");
+		if(m_45degreesDistanceOld != -1)
+		{
+			g_Config.m_ClMouseMaxDistance = m_45degreesDistanceOld;
+			m_45degreesDistanceOld = -1;
+		}
+		else
+		{
+			GameClient()->Echo("[[red]] Didn't find old distance. Binding 400");
+			g_Config.m_ClMouseMaxDistance = 400;
+			m_45degreesDistanceOld = -1;
+		}
+		if(m_Small45OldSens != -1)
+		{
+			g_Config.m_InpMousesens = m_Small45OldSens;
+			m_Small45OldSens = -1;
+		}
+		else
+		{
+			GameClient()->Echo("[[red]] Didn't find old sens. Binding 100 sens");
+			g_Config.m_InpMousesens = 100;
+			m_Small45OldSens = -1;
+		}
+	}
+}
+
+void CRClient::ConToggleSmallSens(IConsole::IResult *pResult, void *pUserData)
+{
+	CRClient *pSelf = static_cast<CRClient *>(pUserData);
+	bool m_SmallSenstoggle = pResult->GetInteger(0) != 0;
+	if(pSelf->m_45degreesEnabled)
+	{
+		if(m_SmallSenstoggle && !pSelf->m_Smallsenstogglelastinput)
+			pSelf->GameClient()->Echo("[[red]] Cant enable small sens. 45 degrees enabled");
+		pSelf->m_Smallsenstogglelastinput = m_SmallSenstoggle;
+		return;
+	}
+	if(g_Config.m_RcToggleSmallSens)
+	{
+		if(m_SmallSenstoggle && !pSelf->m_Smallsenstogglelastinput)
+		{
+			if(pSelf->m_Small45OldSens == -1)
+			{
+				pSelf->ToggleSmallSens(true);
+			}
+			else
+			{
+				pSelf->ToggleSmallSens(false);
+			}
+		}
+		pSelf->m_Smallsenstogglelastinput = m_SmallSenstoggle;
+	}
+	else
+	{
+		if(m_SmallSenstoggle && !pSelf->m_Smallsenstogglelastinput)
+		{
+			pSelf->ToggleSmallSens(true);
+		}
+		else if(!m_SmallSenstoggle)
+		{
+			pSelf->ToggleSmallSens(false);
+		}
+		pSelf->m_Smallsenstogglelastinput = m_SmallSenstoggle;
+	}
+}
+void CRClient::ToggleSmallSens(bool Enable)
+{
+	if(Enable)
+	{
+		m_SmallSensEnabled = true;
+		if(g_Config.m_RcSmallSensEcho)
+			GameClient()->Echo("[[green]] small sens on");
+		if(m_Small45OldSens == -1)
+			m_Small45OldSens = g_Config.m_InpMousesens;
+		g_Config.m_InpMousesens = 1;
+	}
+	else
+	{
+		m_SmallSensEnabled = false;
+		if(g_Config.m_RcSmallSensEcho)
+			GameClient()->Echo("[[red]] small sens off");
+		if(m_Small45OldSens != -1)
+		{
+			g_Config.m_InpMousesens = m_Small45OldSens;
+			m_Small45OldSens = -1;
+		}
+		else
+		{
+			GameClient()->Echo("[[red]] Didn't find old sens. Binding 100 sens");
+			g_Config.m_InpMousesens = 100;
+			m_Small45OldSens = -1;
+		}
+	}
+}
+
+void CRClient::ConToggleDeepfly(IConsole::IResult *pResult, void *pUserData)
+{
+	CRClient *pSelf = static_cast<CRClient *>(pUserData);
+	char CurBind[128];
+	str_copy(CurBind, pSelf->GameClient()->m_Binds.Get(291, 0), sizeof(CurBind));
+	if(str_find_nocase(CurBind, "+toggle cl_dummy_hammer"))
+	{
+		pSelf->ToggleDeepFly(false, CurBind);
+	}
+	else
+	{
+		pSelf->ToggleDeepFly(true, CurBind);
+	}
+}
+void CRClient::ToggleDeepFly(bool Enable, const char *OldBind)
+{
+	if(!Enable)
+	{
+		GameClient()->Echo("[[red]] Deepfly off");
+		if(str_length(m_DeepflyOldmouse1Bind) > 1)
+			GameClient()->m_Binds.Bind(291, m_DeepflyOldmouse1Bind, false, 0);
+		else
+		{
+			GameClient()->Echo("[[red]] No old bind in memory. Binding +fire");
+			GameClient()->m_Binds.Bind(291, "+fire", false, 0);
+		}
+	}
+	else
+	{
+		GameClient()->Echo("[[green]] Deepfly on");
+		str_copy(m_DeepflyOldmouse1Bind, OldBind, sizeof(m_DeepflyOldmouse1Bind));
+		GameClient()->m_Binds.Bind(291, "+fire; +toggle cl_dummy_hammer 1 0", false, 0);
 	}
 }

@@ -47,7 +47,6 @@ class CRClient : public CComponent
 	static void ConToggleSmallSens(IConsole::IResult *pResult, void *pUserData);
 	static void ConToggleDeepfly(IConsole::IResult *pResult, void *pUserData);
 	bool m_DeepflyEnabled;
-	char m_DeepflyOldmouse1Bind[128];
 	bool m_SmallSensEnabled;
 	bool m_Smallsenstogglelastinput;
 	int m_Small45OldSens = -1;

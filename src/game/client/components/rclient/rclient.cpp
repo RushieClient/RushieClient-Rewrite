@@ -79,7 +79,7 @@ void CRClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 	}
 	if(pSelf->m_SmallSensEnabled)
 	{
-		str_format(aBuf, sizeof(aBuf), "inp_mousesens %s", pSelf->m_Small45OldSens);
+		str_format(aBuf, sizeof(aBuf), "inp_mousesens %d", pSelf->m_Small45OldSens);
 		pConfigManager->WriteLine(aBuf, ConfigDomain::RCLIENT);
 	}
 	if(pSelf->m_DeepflyEnabled && str_find_nocase(pSelf->GameClient()->m_Binds.Get(g_Config.m_RcDeepFlyOnRMB ? KEY_MOUSE_2 : KEY_MOUSE_1, 0), "+toggle cl_dummy_hammer 1 0"))

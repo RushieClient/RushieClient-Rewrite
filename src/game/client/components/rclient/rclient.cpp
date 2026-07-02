@@ -33,6 +33,7 @@ void CRClient::OnRender()
 
 void CRClient::OnConsoleInit()
 {
+	ConfigManager()->RegisterCallback(CRClient::ConfigSaveCallback, this, ConfigDomain::RCLIENT);
 	Console()->Register("rc_find_player_from_ddstats", "s[type]", CFGFLAG_CLIENT, ConFindPlayerFromDdstats, this, "Fetch player from DDstats");
 	Console()->Register("rc_find_skin_from_ddstats", "s[type]", CFGFLAG_CLIENT, ConFindSkinFromDdstats, this, "Fetch player's skin from DDstats");
 	Console()->Register("rc_copy_skin_from_ddstats", "s[type]", CFGFLAG_CLIENT, ConCopySkinFromDdstats, this, "Fetch and copy player's skin from DDstats");
@@ -62,7 +63,38 @@ void CRClient::OnStateChange(int NewState, int OldState)
 
 void CRClient::OnShutdown()
 {
-	ResetBinds();
+
+}
+
+void CRClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
+{
+	CRClient *pSelf = (CRClient *)pUserData;
+	char aBuf[128];
+	if(pSelf->m_45degreesEnabled)
+	{
+		str_format(aBuf, sizeof(aBuf), "inp_mousesens %d", pSelf->m_Small45OldSens);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::RCLIENT);
+		str_format(aBuf, sizeof(aBuf), "cl_mouse_max_distance %d", pSelf->m_45degreesDistanceOld);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::RCLIENT);
+	}
+	if(pSelf->m_SmallSensEnabled)
+	{
+		str_format(aBuf, sizeof(aBuf), "inp_mousesens %s", pSelf->m_Small45OldSens);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::RCLIENT);
+	}
+	if(pSelf->m_DeepflyEnabled && str_find_nocase(pSelf->GameClient()->m_Binds.Get(g_Config.m_RcDeepFlyOnRMB ? KEY_MOUSE_2 : KEY_MOUSE_1, 0), "+toggle cl_dummy_hammer 1 0"))
+	{
+		std::string Text {pSelf->GameClient()->m_Binds.Get(g_Config.m_RcDeepFlyOnRMB ? KEY_MOUSE_2 : KEY_MOUSE_1, 0)};
+		std::string ToDelete{"; +toggle cl_dummy_hammer 1 0"};
+		size_t Start {Text.find(ToDelete)};
+		while (Start != std::string::npos)
+		{
+			Text.erase(Start, ToDelete.length());
+			Start = Text.find(ToDelete, Start + ToDelete.length());
+		}
+		str_format(aBuf, sizeof(aBuf), "bind %s \"%s\"", g_Config.m_RcDeepFlyOnRMB ? "mouse2" : "mouse1", Text.c_str());
+		pConfigManager->WriteLine(aBuf, ConfigDomain::RCLIENT);
+	}
 }
 
 // Need things
@@ -512,9 +544,9 @@ void CRClient::ResetBinds()
 	{
 		ToggleSmallSens(false);
 	}
-	if(m_DeepflyEnabled && str_find_nocase(GameClient()->m_Binds.Get(291, 0), "+toggle cl_dummy_hammer 1 0"))
+	if(m_DeepflyEnabled && str_find_nocase(GameClient()->m_Binds.Get(g_Config.m_RcDeepFlyOnRMB ? KEY_MOUSE_2 : KEY_MOUSE_1, 0), "+toggle cl_dummy_hammer 1 0"))
 	{
-		ToggleDeepFly(false, GameClient()->m_Binds.Get(291, 0));
+		ToggleDeepFly(false, GameClient()->m_Binds.Get(g_Config.m_RcDeepFlyOnRMB ? KEY_MOUSE_2 : KEY_MOUSE_1, 0));
 	}
 }
 

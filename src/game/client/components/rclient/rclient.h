@@ -77,6 +77,7 @@ public:
 	void TrackerClientIdRemove(int ClientId);
 
 	//Binds
+	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 	void ToggleDeepFly(bool Enable, const char *CurBind, bool NeedEcho = true);
 	void ToggleSmallSens(bool Enable, bool NeedEcho = true);
 	void Toggle45Degrees(bool Enable, bool NeedEcho = true);

@@ -46,6 +46,7 @@ class CRClient : public CComponent
 	static void ConToggle45Degrees(IConsole::IResult *pResult, void *pUserData);
 	static void ConToggleSmallSens(IConsole::IResult *pResult, void *pUserData);
 	static void ConToggleDeepfly(IConsole::IResult *pResult, void *pUserData);
+	bool m_DeepflyEnabled;
 	char m_DeepflyOldmouse1Bind[128];
 	bool m_SmallSensEnabled;
 	bool m_Smallsenstogglelastinput;
@@ -53,6 +54,7 @@ class CRClient : public CComponent
 	bool m_45degreesEnabled;
 	int m_45degreesDistanceOld = -1;
 	bool m_45degreestogglelastinput;
+	void ResetBinds();
 
 public:
 	CRClient();
@@ -75,9 +77,9 @@ public:
 	void TrackerClientIdRemove(int ClientId);
 
 	//Binds
-	void ToggleDeepFly(bool Enable, const char *OldBind);
-	void ToggleSmallSens(bool Enable);
-	void Toggle45Degrees(bool Enable);
+	void ToggleDeepFly(bool Enable, const char *CurBind, bool NeedEcho = true);
+	void ToggleSmallSens(bool Enable, bool NeedEcho = true);
+	void Toggle45Degrees(bool Enable, bool NeedEcho = true);
 };
 
 #endif //GAME_CLIENT_COMPONENTS_RCLIENT_RCLIENT_H

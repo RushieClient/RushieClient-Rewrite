@@ -111,7 +111,8 @@ static int FindPlayerClientId(CGameClient *pGameClient ,const char *Nickname)
 	}
 	if(ClientID == -1)
 	{
-		ClientID = str_toint(Nickname);
+		if(pGameClient->m_aClients[str_toint(Nickname)].m_Active)
+			ClientID = str_toint(Nickname);
 	}
 	if(ClientID >= 0 && ClientID < MAX_CLIENTS)
 		return ClientID;
@@ -287,7 +288,7 @@ void CRClient::ApplyColorToPlayer(const int CustomColor, const int SkinColorBody
 {
 	if(g_Config.m_ClDummy == 1)
 	{
-		str_copy(PlayerSkinBeforeCopyPlayer, g_Config.m_ClPlayerSkin, sizeof(PlayerSkinBeforeCopyPlayer));
+		str_copy(DummySkinBeforeCopyPlayer, g_Config.m_ClDummySkin, sizeof(DummySkinBeforeCopyPlayer));
 		DummyUseCustomColorBeforeCopyPlayer = g_Config.m_ClDummyUseCustomColor;
 		DummyBodyColorBeforeCopyPlayer = g_Config.m_ClDummyColorBody;
 		DummyFeetColorBeforeCopyPlayer = g_Config.m_ClDummyColorFeet;

@@ -730,7 +730,6 @@ void CRClient::ToggleDeepFly(bool Enable, const char *CurBind, bool NeedEcho)
 			Start = Text.find(ToDelete, Start + ToDelete.length());
 		}
 		GameClient()->m_Binds.Bind(g_Config.m_RcDeepFlyOnRMB ? KEY_MOUSE_2 : KEY_MOUSE_1, Text.c_str(), false, 0);
-		GameClient()->Echo(Text.c_str());
 		GameClient()->Echo("[[red]] Deepfly off");
 	}
 	else
@@ -739,7 +738,6 @@ void CRClient::ToggleDeepFly(bool Enable, const char *CurBind, bool NeedEcho)
 		std::string Text {CurBind};
 		Text.append("; +toggle cl_dummy_hammer 1 0");
 		GameClient()->Echo("[[green]] Deepfly on");
-		GameClient()->Echo(Text.c_str());
 		GameClient()->m_Binds.Bind(g_Config.m_RcDeepFlyOnRMB ? KEY_MOUSE_2 : KEY_MOUSE_1, Text.c_str(), false, 0);
 	}
 }

@@ -48,11 +48,13 @@ void CRClient::OnConsoleInit()
 	Console()->Register("rc_toggle_deepfly", "", CFGFLAG_CLIENT, ConToggleDeepfly, this, "Toggle deepfly");
 	Console()->Register("+rc_small_sens", "", CFGFLAG_CLIENT, ConToggleSmallSens, this, "small sens");
 	Console()->Register("+rc_45_degrees", "", CFGFLAG_CLIENT, ConToggle45Degrees, this, "45degrees");
+	Console()->Register("rc_add_censor_word", "s[word]", CFGFLAG_CLIENT, ConAddCensorWord, this, "Add word to censor list");
+	Console()->Register("rc_remove_censor_word", "s[word]", CFGFLAG_CLIENT, ConRemoveCensorWord, this, "Remove word from censor list");
+	Console()->Register("rc_print_censor_list", "", CFGFLAG_CLIENT, ConPrintCensorList, this, "Print censor list");
 }
 
 void CRClient::OnMessage(int MsgType, void *pRawMsg)
 {
-
 }
 
 void CRClient::OnStateChange(int NewState, int OldState)
@@ -741,4 +743,131 @@ void CRClient::ToggleDeepFly(bool Enable, const char *CurBind, bool NeedEcho)
 		GameClient()->Echo("[[green]] Deepfly on");
 		GameClient()->m_Binds.Bind(g_Config.m_RcDeepFlyOnRMB ? KEY_MOUSE_2 : KEY_MOUSE_1, Text.c_str(), false, 0);
 	}
+}
+
+// Message Filter
+void CRClient::ConAddCensorWord(IConsole::IResult *pResult, void *pUserData)
+{
+	CRClient *pSelf = static_cast<CRClient *>(pUserData);
+	char aBuf[256];
+	str_utf8_tolower(pResult->GetString(0), aBuf, sizeof(aBuf));
+	pSelf->CensorWordsList.push_back(aBuf);
+}
+
+void CRClient::ConRemoveCensorWord(IConsole::IResult *pResult, void *pUserData)
+{
+	CRClient *pSelf = static_cast<CRClient *>(pUserData);
+	const char *CensorWord = pResult->GetString(0);
+	for(size_t i = 0; i < pSelf->CensorWordsList.size(); i++)
+	{
+		if(!str_utf8_comp_nocase(CensorWord, pSelf->CensorWordsList[i].c_str()))
+		{
+			FastPrint(pSelf->GameClient(), "Censor", "Removed word: %s", pSelf->CensorWordsList[i].c_str());
+			pSelf->CensorWordsList.erase(pSelf->CensorWordsList.begin() + i);
+			return;
+		}
+	}
+}
+
+void CRClient::ConPrintCensorList(IConsole::IResult *pResult, void *pUserData)
+{
+	CRClient *pSelf = static_cast<CRClient *>(pUserData);
+	std::string AllWords;
+	for(size_t i = 0; i < pSelf->CensorWordsList.size(); i++)
+	{
+		if(i != 0)
+			AllWords.append(", ");
+		AllWords.append(pSelf->CensorWordsList[i]);
+	}
+	FastPrint(pSelf->GameClient(), "All words", "%s", AllWords.c_str());
+}
+
+const char *CRClient::FilterMessage(const char *Message)
+{
+	if(g_Config.m_RcMessageFilterMode == 0)
+	{
+		return Message;
+	}
+
+	std::string text {Message};
+	if(g_Config.m_RcMessageFilterMode == 1)
+	{
+		for(size_t i = 0; i < CensorWordsList.size(); i++)
+		{
+			std::string to_delete{CensorWordsList[i]};
+			const char *pFound = str_utf8_find_nocase(text.c_str(), to_delete.c_str());
+			while(pFound)
+			{
+				size_t start = pFound - text.c_str();
+				size_t CharCount = 0;
+				size_t BytesCount = 0;
+				str_utf8_stats(to_delete.c_str(), to_delete.size(), to_delete.size(), &BytesCount, &CharCount);
+				text.replace(start, to_delete.length(), CharCount + 1, '*');
+				pFound = str_utf8_find_nocase(text.c_str() + start, to_delete.c_str());
+			}
+		}
+		m_FilteredMessage = text;
+		return m_FilteredMessage.c_str();
+	}
+	if(g_Config.m_RcMessageFilterMode == 2)
+	{
+		for(size_t i = 0; i < CensorWordsList.size(); i++)
+		{
+			std::string to_delete{CensorWordsList[i]};
+			const char *pFound = str_utf8_find_nocase(text.c_str(), to_delete.c_str());
+			while(pFound)
+			{
+				size_t start = pFound - text.c_str();
+				size_t word_start = text.find_last_of(' ', start);
+				if(word_start == std::string::npos)
+					word_start = 0;
+				else word_start++;
+				size_t word_end = text.find_first_of(' ', start + to_delete.length());
+				if(word_end == std::string::npos)
+					word_end = text.length();
+				size_t CharCount = 0;
+				size_t BytesCount = 0;
+				str_utf8_stats(text.c_str() + word_start, word_end - word_start, word_end - word_start, &BytesCount, &CharCount);
+				text.replace(word_start, word_end - word_start, CharCount + 1, '*');
+				pFound = str_utf8_find_nocase(text.c_str() + start, to_delete.c_str());
+			}
+		}
+		m_FilteredMessage = text;
+		return m_FilteredMessage.c_str();
+	}
+	if(g_Config.m_RcMessageFilterMode == 3)
+	{
+		for(size_t i = 0; i < CensorWordsList.size(); i++)
+		{
+			std::string to_delete{CensorWordsList[i]};
+			const char *pFound = str_utf8_find_nocase(text.c_str(), to_delete.c_str());
+			while(pFound)
+			{
+				size_t start = pFound - text.c_str();
+				size_t word_start = text.find_last_of(' ', start);
+				if(word_start == std::string::npos)
+					word_start = 0;
+				else word_start++;
+				size_t word_end = text.find_first_of(' ', start + to_delete.length());
+				if(word_end == std::string::npos)
+					word_end = text.length();
+				size_t CharCount = 0;
+				size_t BytesCount = 0;
+				if(!str_utf8_comp_nocase(text.c_str() + word_start, to_delete.c_str()))
+				{
+					str_utf8_stats(text.c_str() + word_start, word_end - word_start, word_end - word_start, &BytesCount, &CharCount);
+					text.replace(word_start, word_end - word_start, CharCount + 1, '^');
+				}
+				else
+				{
+					str_utf8_stats(to_delete.c_str(), to_delete.size(), to_delete.size(), &BytesCount, &CharCount);
+					text.replace(start, to_delete.length(), CharCount + 1, '*');
+				}
+				pFound = str_utf8_find_nocase(text.c_str() + start, to_delete.c_str());
+			}
+		}
+		m_FilteredMessage = text;
+		return m_FilteredMessage.c_str();
+	}
+	return Message;
 }

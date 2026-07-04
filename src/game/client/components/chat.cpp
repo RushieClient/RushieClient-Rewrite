@@ -560,9 +560,8 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 	{
 		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
 
-		auto &Re = GameClient()->m_TClient.m_RegexChatIgnore;
-		if(Re.error().empty() && Re.test(pMsg->m_pMessage))
-			return;
+		if(g_Config.m_RcMessageFilterMode != 0)
+			pMsg->m_pMessage = GameClient()->m_RClient.FilterMessage(pMsg->m_pMessage);
 
 		/*
 		if(g_Config.m_ClCensorChat)

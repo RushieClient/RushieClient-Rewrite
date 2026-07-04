@@ -21,3 +21,6 @@ MACRO_CONFIG_INT(RcDeepFlyOnRMB, rc_deep_fly_on_rmb, 0, 0, 1, CFGFLAG_CLIENT | C
 
 // Master servers
 MACRO_CONFIG_INT(RcUseMasterServerMirrors, rc_use_master_server_mirrors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use master server mirrors")
+
+// Chat Filter
+MACRO_CONFIG_INT(RcMessageFilterMode, rc_message_filter_mode, 0, 0, 3, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message filter mode(0-off,1-partical,2-full,3-both")

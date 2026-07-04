@@ -55,6 +55,12 @@ class CRClient : public CComponent
 	bool m_45degreestogglelastinput;
 	void ResetBinds();
 
+	// Message Filter
+	static void ConAddCensorWord(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveCensorWord(IConsole::IResult *pResult, void *pUserData);
+	static void ConPrintCensorList(IConsole::IResult *pResult, void *pUserData);
+	std::vector<std::string> CensorWordsList;
+
 public:
 	CRClient();
 	int Sizeof() const override { return sizeof(*this); }
@@ -80,6 +86,10 @@ public:
 	void ToggleDeepFly(bool Enable, const char *CurBind, bool NeedEcho = true);
 	void ToggleSmallSens(bool Enable, bool NeedEcho = true);
 	void Toggle45Degrees(bool Enable, bool NeedEcho = true);
+
+	// Message Filter
+	const char *FilterMessage(const char *Message);
+	std::string m_FilteredMessage;
 };
 
 #endif //GAME_CLIENT_COMPONENTS_RCLIENT_RCLIENT_H

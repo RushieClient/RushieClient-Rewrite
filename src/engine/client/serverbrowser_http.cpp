@@ -22,6 +22,7 @@
 
 #include <chrono>
 #include <memory>
+#include <thread>
 #include <vector>
 
 using namespace std::chrono_literals;
@@ -82,8 +83,7 @@ private:
 		CChooseMaster *m_pParent;
 		CLock m_Lock;
 		std::shared_ptr<CData> m_pData;
-		std::shared_ptr<CHttpRequest> m_pHead;
-		std::shared_ptr<CHttpRequest> m_pGet;
+		std::shared_ptr<CHttpRequest> m_pGet[MAX_URLS];
 		void Run() override REQUIRES(!m_Lock);
 
 	public:
@@ -177,14 +177,13 @@ bool CChooseMaster::CJob::Abort()
 	}
 
 	const CLockScope LockScope(m_Lock);
-	if(m_pHead != nullptr)
-	{
-		m_pHead->Abort();
-	}
 
-	if(m_pGet != nullptr)
+	for(int i = 0; i < m_pData->m_NumUrls; i++)
 	{
-		m_pGet->Abort();
+		if(m_pGet[i] != nullptr)
+		{
+			m_pGet[i]->Abort();
+		}
 	}
 
 	return true;
@@ -211,99 +210,66 @@ void CChooseMaster::CJob::Run()
 	// 10 seconds connection timeout, lower than 8KB/s for 10 seconds to
 	// fail.
 	CTimeout Timeout{10000, 0, 8000, 10};
-	int aTimeMs[MAX_URLS];
-	int aAgeS[MAX_URLS];
+	auto StartTime = time_get_nanoseconds();
 	for(int i = 0; i < m_pData->m_NumUrls; i++)
 	{
-		aTimeMs[i] = -1;
-		aAgeS[i] = SanitizeAge({});
 		const char *pUrl = m_pData->m_aaUrls[aRandomized[i]];
-		std::shared_ptr<CHttpRequest> pHead = HttpHead(pUrl);
-		pHead->Timeout(Timeout);
-		pHead->LogProgress(HTTPLOG::FAILURE);
-		{
-			const CLockScope LockScope(m_Lock);
-			m_pHead = pHead;
-		}
 
-		m_pParent->m_pHttp->Run(pHead);
-		pHead->Wait();
-		if(pHead->State() == EHttpState::ABORTED || State() == IJob::STATE_ABORTED)
+		m_pGet[i] = HttpGet(pUrl);
+		m_pGet[i]->Timeout(Timeout);
+		m_pGet[i]->LogProgress(HTTPLOG::FAILURE);
+
+		m_pParent->m_pHttp->Run(m_pGet[i]);
+	}
+	int BestpUrl = -1;
+	while(BestpUrl == -1)
+	{
+		bool AllDone = true;
+		for(int i = 0; i < m_pData->m_NumUrls; i++)
+		{
+			if(!m_pGet[i]->Done())
+				AllDone = false;
+			if(m_pGet[i]->State() == EHttpState::ABORTED || State() == IJob::STATE_ABORTED)
+			{
+				log_debug("serverbrowser_http", "master chooser aborted");
+				return;
+			}
+			if(m_pGet[i]->State() != EHttpState::DONE)
+			{
+				continue;
+			}
+			json_value *pJson = m_pGet[i]->ResultJson();
+			if(!pJson)
+				continue;
+			bool ParseFailure = m_pData->m_pfnValidator(pJson);
+			json_value_free(pJson);
+			if(ParseFailure)
+				continue;
+			BestpUrl = i;
+			for(int j = 0; j < m_pData->m_NumUrls; j++)
+			{
+				if(j != i && m_pGet[j] != nullptr && !m_pGet[j]->Done())
+					m_pGet[j]->Abort();
+			}
+			break;
+		}
+		if(AllDone)
+		{
+			log_error("serverbrowser_http", "WARNING: no usable masters found");
+			return;
+		}
+		if(State() == IJob::STATE_ABORTED)
 		{
 			log_debug("serverbrowser_http", "master chooser aborted");
 			return;
 		}
-		if(pHead->State() != EHttpState::DONE)
-		{
-			continue;
-		}
-
-		auto StartTime = time_get_nanoseconds();
-		std::shared_ptr<CHttpRequest> pGet = HttpGet(pUrl);
-		pGet->Timeout(Timeout);
-		pGet->LogProgress(HTTPLOG::FAILURE);
-		{
-			const CLockScope LockScope(m_Lock);
-			m_pGet = pGet;
-		}
-
-		m_pParent->m_pHttp->Run(pGet);
-		pGet->Wait();
-
-		auto Time = std::chrono::duration_cast<std::chrono::milliseconds>(time_get_nanoseconds() - StartTime);
-		if(pGet->State() == EHttpState::ABORTED || State() == IJob::STATE_ABORTED)
-		{
-			log_debug("serverbrowser_http", "master chooser aborted");
-			return;
-		}
-		if(pGet->State() != EHttpState::DONE)
-		{
-			continue;
-		}
-		json_value *pJson = pGet->ResultJson();
-		if(!pJson)
-		{
-			continue;
-		}
-
-		bool ParseFailure = m_pData->m_pfnValidator(pJson);
-		json_value_free(pJson);
-		if(ParseFailure)
-		{
-			continue;
-		}
-		int AgeS = SanitizeAge(pGet->ResultAgeSeconds());
-		log_info("serverbrowser_http", "found master, url='%s' time=%dms age=%ds", pUrl, (int)Time.count(), AgeS);
-
-		aTimeMs[i] = Time.count();
-		aAgeS[i] = AgeS;
+		std::this_thread::sleep_for(10ms);
 	}
-
-	// Determine index of the minimum time.
-	int BestIndex = -1;
-	int BestTime = 0;
-	int BestAge = 0;
-	for(int i = 0; i < m_pData->m_NumUrls; i++)
-	{
-		if(aTimeMs[i] < 0)
-		{
-			continue;
-		}
-		if(BestIndex == -1 || std::tuple(ClassifyAge(aAgeS[i]), aTimeMs[i]) < std::tuple(ClassifyAge(BestAge), BestTime))
-		{
-			BestTime = aTimeMs[i];
-			BestAge = aAgeS[i];
-			BestIndex = aRandomized[i];
-		}
-	}
-	if(BestIndex == -1)
-	{
-		log_error("serverbrowser_http", "WARNING: no usable masters found");
-		return;
-	}
-
-	log_info("serverbrowser_http", "determined best master, url='%s' time=%dms age=%ds", m_pData->m_aaUrls[BestIndex], BestTime, BestAge);
-	m_pData->m_BestIndex.store(BestIndex);
+	auto Time = std::chrono::duration_cast<std::chrono::milliseconds>(time_get_nanoseconds() - StartTime);
+	int AgeS = SanitizeAge(m_pGet[BestpUrl]->ResultAgeSeconds());
+	const char *pUrl = m_pData->m_aaUrls[aRandomized[BestpUrl]];
+	log_info("serverbrowser_http", "determined best master, url='%s' time=%dms age=%ds", pUrl, (int)Time.count(), AgeS);
+	m_pData->m_BestIndex.store(aRandomized[BestpUrl]);
 }
 
 class CServerBrowserHttp : public IServerBrowserHttp

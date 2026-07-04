@@ -88,7 +88,7 @@ public:
 	void Toggle45Degrees(bool Enable, bool NeedEcho = true);
 
 	// Message Filter
-	const char *FilterMessage(const char *Message);
+	const char *FilterMessage(const char *Message, bool IsChat = false, int ClientId = -1);
 	std::string m_FilteredMessage;
 };
 

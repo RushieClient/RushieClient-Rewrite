@@ -97,6 +97,11 @@ void CRClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 		str_format(aBuf, sizeof(aBuf), "bind %s \"%s\"", g_Config.m_RcDeepFlyOnRMB ? "mouse2" : "mouse1", Text.c_str());
 		pConfigManager->WriteLine(aBuf, ConfigDomain::RCLIENT);
 	}
+	for(size_t i = 0; i < pSelf->CensorWordsList.size(); i++)
+	{
+		str_format(aBuf, sizeof(aBuf), "rc_add_censor_word %s", pSelf->CensorWordsList[i].c_str());
+		pConfigManager->WriteLine(aBuf, ConfigDomain::RCLIENTCENSORLIST);
+	}
 }
 
 // Need things
@@ -782,13 +787,15 @@ void CRClient::ConPrintCensorList(IConsole::IResult *pResult, void *pUserData)
 	FastPrint(pSelf->GameClient(), "All words", "%s", AllWords.c_str());
 }
 
-const char *CRClient::FilterMessage(const char *Message)
+const char *CRClient::FilterMessage(const char *Message, bool IsChat, int ClientId)
 {
+	//TODO: Transfer message filter in chat.cpp
 	if(g_Config.m_RcMessageFilterMode == 0)
 	{
 		return Message;
 	}
 
+	bool CensorFoundInMessage = false;
 	std::string text {Message};
 	if(g_Config.m_RcMessageFilterMode == 1)
 	{
@@ -798,13 +805,49 @@ const char *CRClient::FilterMessage(const char *Message)
 			const char *pFound = str_utf8_find_nocase(text.c_str(), to_delete.c_str());
 			while(pFound)
 			{
+				CensorFoundInMessage = true;
 				size_t start = pFound - text.c_str();
-				size_t CharCount = 0;
-				size_t BytesCount = 0;
-				str_utf8_stats(to_delete.c_str(), to_delete.size(), to_delete.size(), &BytesCount, &CharCount);
-				text.replace(start, to_delete.length(), CharCount + 1, '*');
-				pFound = str_utf8_find_nocase(text.c_str() + start, to_delete.c_str());
+				if(g_Config.m_RcMessageFilterMultiplyChangeWordOnPartialMatch)
+				{
+					size_t CharCount = 0;
+					size_t BytesCount = 0;
+					str_utf8_stats(to_delete.c_str(), to_delete.size(), to_delete.size(), &BytesCount, &CharCount);
+					if(strlen(g_Config.m_RcMessageFilterWordOnPartialMatch) < 2)
+					{
+						text.replace(start, to_delete.length(), CharCount + 1, g_Config.m_RcMessageFilterWordOnPartialMatch[0]);
+						pFound = str_utf8_find_nocase(text.c_str() + start + CharCount + 1, to_delete.c_str());
+					}
+					else
+					{
+						std::string to_change;
+						to_change.reserve((CharCount + 1) * strlen(g_Config.m_RcMessageFilterWordOnPartialMatch));
+						for(size_t j = 0; j < CharCount + 1; j++)
+							to_change += g_Config.m_RcMessageFilterWordOnPartialMatch;
+						text.replace(start, to_delete.length(), to_change);
+						pFound = str_utf8_find_nocase(text.c_str() + start + to_change.size(), to_delete.c_str());
+					}
+				}
+				else
+				{
+					text.replace(start, to_delete.length(), g_Config.m_RcMessageFilterWordOnPartialMatch);
+					pFound = str_utf8_find_nocase(text.c_str() + start + strlen(g_Config.m_RcMessageFilterWordOnPartialMatch), to_delete.c_str());
+				}
 			}
+		}
+		if(CensorFoundInMessage && IsChat && g_Config.m_RcMessageFilterPrintBlockedMessage)
+		{
+			std::string BlockedMessage;
+			if(ClientId != -1)
+			{
+				BlockedMessage += GameClient()->m_aClients[ClientId].m_aName;
+				BlockedMessage += " said ";
+			}
+			else
+			{
+				BlockedMessage += "Server said ";
+			}
+			BlockedMessage += Message;
+			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str());
 		}
 		m_FilteredMessage = text;
 		return m_FilteredMessage.c_str();
@@ -817,6 +860,7 @@ const char *CRClient::FilterMessage(const char *Message)
 			const char *pFound = str_utf8_find_nocase(text.c_str(), to_delete.c_str());
 			while(pFound)
 			{
+				CensorFoundInMessage = true;
 				size_t start = pFound - text.c_str();
 				size_t word_start = text.find_last_of(' ', start);
 				if(word_start == std::string::npos)
@@ -825,12 +869,47 @@ const char *CRClient::FilterMessage(const char *Message)
 				size_t word_end = text.find_first_of(' ', start + to_delete.length());
 				if(word_end == std::string::npos)
 					word_end = text.length();
-				size_t CharCount = 0;
-				size_t BytesCount = 0;
-				str_utf8_stats(text.c_str() + word_start, word_end - word_start, word_end - word_start, &BytesCount, &CharCount);
-				text.replace(word_start, word_end - word_start, CharCount + 1, '*');
-				pFound = str_utf8_find_nocase(text.c_str() + start, to_delete.c_str());
+				if(g_Config.m_RcMessageFilterMultiplyChangeWordOnFullMatch)
+				{
+					size_t CharCount = 0;
+					size_t BytesCount = 0;
+					str_utf8_stats(text.c_str() + word_start, word_end - word_start, word_end - word_start, &BytesCount, &CharCount);
+					if(strlen(g_Config.m_RcMessageFilterWordOnFullMatch) < 2)
+					{
+						text.replace(word_start, word_end - word_start, CharCount + 1, g_Config.m_RcMessageFilterWordOnFullMatch[0]);
+						pFound = str_utf8_find_nocase(text.c_str() + word_start + (CharCount + 1), to_delete.c_str());
+					}
+					else
+					{
+						std::string to_change;
+						to_change.reserve((CharCount + 1) * strlen(g_Config.m_RcMessageFilterWordOnFullMatch));
+						for(size_t j = 0; j < CharCount + 1; j++)
+							to_change += g_Config.m_RcMessageFilterWordOnFullMatch;
+						text.replace(word_start, word_end - word_start, to_change);
+						pFound = str_utf8_find_nocase(text.c_str() + word_start + to_change.size(), to_delete.c_str());
+					}
+				}
+				else
+				{
+					text.replace(word_start, word_end - word_start, g_Config.m_RcMessageFilterWordOnFullMatch);
+					pFound = str_utf8_find_nocase(text.c_str() + word_start + strlen(g_Config.m_RcMessageFilterWordOnFullMatch), to_delete.c_str());
+				}
 			}
+		}
+		if(CensorFoundInMessage && IsChat && g_Config.m_RcMessageFilterPrintBlockedMessage)
+		{
+			std::string BlockedMessage;
+			if(ClientId != -1)
+			{
+				BlockedMessage += GameClient()->m_aClients[ClientId].m_aName;
+				BlockedMessage += " said ";
+			}
+			else
+			{
+				BlockedMessage += "Server said ";
+			}
+			BlockedMessage += Message;
+			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str());
 		}
 		m_FilteredMessage = text;
 		return m_FilteredMessage.c_str();
@@ -843,6 +922,7 @@ const char *CRClient::FilterMessage(const char *Message)
 			const char *pFound = str_utf8_find_nocase(text.c_str(), to_delete.c_str());
 			while(pFound)
 			{
+				CensorFoundInMessage = true;
 				size_t start = pFound - text.c_str();
 				size_t word_start = text.find_last_of(' ', start);
 				if(word_start == std::string::npos)
@@ -851,20 +931,78 @@ const char *CRClient::FilterMessage(const char *Message)
 				size_t word_end = text.find_first_of(' ', start + to_delete.length());
 				if(word_end == std::string::npos)
 					word_end = text.length();
-				size_t CharCount = 0;
-				size_t BytesCount = 0;
 				if(!str_utf8_comp_nocase(text.c_str() + word_start, to_delete.c_str()))
 				{
-					str_utf8_stats(text.c_str() + word_start, word_end - word_start, word_end - word_start, &BytesCount, &CharCount);
-					text.replace(word_start, word_end - word_start, CharCount + 1, '^');
+					if(g_Config.m_RcMessageFilterMultiplyChangeWordOnFullMatch)
+					{
+						size_t CharCount = 0;
+						size_t BytesCount = 0;
+						str_utf8_stats(text.c_str() + word_start, word_end - word_start, word_end - word_start, &BytesCount, &CharCount);
+						if(strlen(g_Config.m_RcMessageFilterWordOnFullMatch) < 2)
+						{
+							text.replace(word_start, word_end - word_start, CharCount + 1, g_Config.m_RcMessageFilterWordOnFullMatch[0]);
+							pFound = str_utf8_find_nocase(text.c_str() + word_start + (CharCount + 1), to_delete.c_str());
+						}
+						else
+						{
+							std::string to_change;
+							to_change.reserve((CharCount + 1) * strlen(g_Config.m_RcMessageFilterWordOnFullMatch));
+							for(size_t j = 0; j < CharCount + 1; j++)
+								to_change += g_Config.m_RcMessageFilterWordOnFullMatch;
+							text.replace(word_start, word_end - word_start, to_change);
+							pFound = str_utf8_find_nocase(text.c_str() + word_start + to_change.size(), to_delete.c_str());
+						}
+					}
+					else
+					{
+						text.replace(word_start, word_end - word_start, g_Config.m_RcMessageFilterWordOnFullMatch);
+						pFound = str_utf8_find_nocase(text.c_str() + word_start + strlen(g_Config.m_RcMessageFilterWordOnFullMatch), to_delete.c_str());
+					}
 				}
 				else
 				{
-					str_utf8_stats(to_delete.c_str(), to_delete.size(), to_delete.size(), &BytesCount, &CharCount);
-					text.replace(start, to_delete.length(), CharCount + 1, '*');
+					if(g_Config.m_RcMessageFilterMultiplyChangeWordOnPartialMatch)
+					{
+						size_t CharCount = 0;
+						size_t BytesCount = 0;
+						str_utf8_stats(to_delete.c_str(), to_delete.size(), to_delete.size(), &BytesCount, &CharCount);
+						if(strlen(g_Config.m_RcMessageFilterWordOnPartialMatch) < 2)
+						{
+							text.replace(start, to_delete.length(), CharCount + 1, g_Config.m_RcMessageFilterWordOnPartialMatch[0]);
+							pFound = str_utf8_find_nocase(text.c_str() + start + (CharCount + 1), to_delete.c_str());
+						}
+						else
+						{
+							std::string to_change;
+							to_change.reserve((CharCount + 1) * strlen(g_Config.m_RcMessageFilterWordOnPartialMatch));
+							for(size_t j = 0; j < CharCount + 1; j++)
+								to_change += g_Config.m_RcMessageFilterWordOnPartialMatch;
+							text.replace(start, to_delete.length(), to_change);
+							pFound = str_utf8_find_nocase(text.c_str() + start + to_change.size(), to_delete.c_str());
+						}
+					}
+					else
+					{
+						text.replace(start, to_delete.length(), g_Config.m_RcMessageFilterWordOnPartialMatch);
+						pFound = str_utf8_find_nocase(text.c_str() + start + strlen(g_Config.m_RcMessageFilterWordOnPartialMatch), to_delete.c_str());
+					}
 				}
-				pFound = str_utf8_find_nocase(text.c_str() + start, to_delete.c_str());
 			}
+		}
+		if(CensorFoundInMessage && IsChat && g_Config.m_RcMessageFilterPrintBlockedMessage)
+		{
+			std::string BlockedMessage;
+			if(ClientId != -1)
+			{
+				BlockedMessage += GameClient()->m_aClients[ClientId].m_aName;
+				BlockedMessage += " said ";
+			}
+			else
+			{
+				BlockedMessage += "Server said ";
+			}
+			BlockedMessage += Message;
+			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str());
 		}
 		m_FilteredMessage = text;
 		return m_FilteredMessage.c_str();

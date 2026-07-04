@@ -211,6 +211,13 @@ int CClient::SendMsgActive(CMsgPacker *pMsg, int Flags)
 	return SendMsg(g_Config.m_ClDummy, pMsg, Flags);
 }
 
+void CClient::SendRClientInfo(int Conn)
+{
+	CMsgPacker Msg(NETMSG_IAMRUSHIE, true);
+	Msg.AddString(CLIENT_NAME " " RCLIENT_VERSION " built on " __DATE__ ", " __TIME__);
+	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
+}
+
 void CClient::SendTClientInfo(int Conn)
 {
 	CMsgPacker Msg(NETMSG_IAMTATER, true);
@@ -220,6 +227,7 @@ void CClient::SendTClientInfo(int Conn)
 
 void CClient::SendInfo(int Conn)
 {
+	SendRClientInfo(Conn);
 	SendTClientInfo(Conn);
 
 	CMsgPacker MsgVer(NETMSG_CLIENTVER, true);

@@ -40,14 +40,6 @@ static int SanitizeAge(std::optional<int64_t> Age)
 // Classify HTTP responses into buckets, treat 15 seconds as fresh, 1 minute as
 // less fresh, etc. This ensures that differences in the order of seconds do
 // not affect master choice.
-static int ClassifyAge(int AgeSeconds)
-{
-	return 0 //
-	       + (AgeSeconds >= 15) // 15 seconds
-	       + (AgeSeconds >= 60) // 1 minute
-	       + (AgeSeconds >= 300) // 5 minutes
-	       + (AgeSeconds / 3600); // 1 hour
-}
 
 class CChooseMaster
 {

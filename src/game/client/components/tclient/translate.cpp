@@ -201,6 +201,7 @@ private:
 		}
 
 		UrlDecode(pTranslatedText->u.string.ptr, Out.m_Text, sizeof(Out.m_Text));
+		str_utf8_fix_truncation(Out.m_Text);
 		str_copy(Out.m_Language, pLanguage->u.string.ptr);
 
 		return true;
@@ -287,6 +288,7 @@ private:
 		}
 
 		UrlDecode(pTranslatedText->u.string.ptr, Out.m_Text, sizeof(Out.m_Text));
+		str_utf8_fix_truncation(Out.m_Text);
 		str_copy(Out.m_Language, pDetectedLanguage->u.string.ptr);
 
 		return true;
@@ -345,15 +347,29 @@ private:
 			return false;
 		}
 
-		const json_value* pTranslatedText = json_array_get(json_array_get(json_array_get(pObj, 0),0),0);
-		if(pTranslatedText == &json_value_none)
+		const json_value *pSentences = json_array_get(pObj, 0);
+		if(pSentences == &json_value_none || pSentences->type != json_array)
 		{
-			str_copy(Out.m_Text, "No destination-text");
+			str_copy(Out.m_Text, "No sentences array");
 			return false;
 		}
-		if(pTranslatedText->type != json_string)
+
+		Out.m_Text[0] = '\0';
+		for(int i = 0; i < json_array_length(pSentences); i++)
 		{
-			str_copy(Out.m_Text, "destination-text is not string");
+			const json_value *pTranslatedText = json_array_get(json_array_get(pSentences, i), 0);
+			if(pTranslatedText == &json_value_none || pTranslatedText->type != json_string)
+				continue;
+
+			size_t CurrentLen = str_length(Out.m_Text);
+			if(CurrentLen >= sizeof(Out.m_Text) - 1)
+				break;
+			UrlDecode(pTranslatedText->u.string.ptr, Out.m_Text + CurrentLen, sizeof(Out.m_Text) - CurrentLen);
+		}
+
+		if(Out.m_Text[0] == '\0')
+		{
+			str_copy(Out.m_Text, "No destination-text");
 			return false;
 		}
 
@@ -369,7 +385,7 @@ private:
 			return false;
 		}
 
-		UrlDecode(pTranslatedText->u.string.ptr, Out.m_Text, sizeof(Out.m_Text));
+		str_utf8_fix_truncation(Out.m_Text);
 		str_copy(Out.m_Language, pDetectedLanguage->u.string.ptr);
 
 		return true;
@@ -397,14 +413,18 @@ public:
 	}
 	CTranslateBackendGTX(IHttp &Http, const char *pText)
 	{
-		char aBuf[4096];
-		str_format(aBuf, sizeof(aBuf), "%s/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&q=",
-			g_Config.m_TcTranslateEndpoint[0] != '\0' ? g_Config.m_TcTranslateEndpoint : "https://translate.googleapis.com",
-			EncodeTarget(g_Config.m_TcTranslateTarget));
-
-		UrlEncode(pText, aBuf + strlen(aBuf), sizeof(aBuf) - strlen(aBuf));
-
-		CreateHttpRequest(Http, aBuf);
+		CJsonStringWriter Json = CJsonStringWriter();
+		Json.BeginObject();
+		Json.WriteAttribute("q");
+		Json.WriteStrValue(pText);
+		Json.WriteAttribute("sl");
+		Json.WriteStrValue("auto");
+		Json.WriteAttribute("tl");
+		Json.WriteStrValue(EncodeTarget(g_Config.m_TcTranslateTarget));
+		Json.EndObject();
+		CreateHttpRequest(Http, g_Config.m_TcTranslateEndpoint[0] == '\0' ? "https://translate.google.com/translate_a/single?client=gtx&dt=t" : g_Config.m_TcTranslateEndpoint);
+		const char *pJson = Json.GetOutputString().c_str();
+		m_pHttpRequest->PostJson(pJson);
 	}
 };
 
@@ -480,6 +500,7 @@ private:
 		}
 
 		UrlDecode(pTranslatedText->u.string.ptr, Out.m_Text, sizeof(Out.m_Text));
+		str_utf8_fix_truncation(Out.m_Text);
 		str_copy(Out.m_Language, pLanguage->u.string.ptr);
 
 		return true;

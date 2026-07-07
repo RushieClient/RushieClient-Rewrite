@@ -1487,7 +1487,10 @@ void CChat::SendChat(int Team, const char *pLine)
 	// send chat message
 	CNetMsg_Cl_Say Msg;
 	Msg.m_Team = Team;
-	Msg.m_pMessage = pLine;
+	if((str_startswith(pLine, ".") || str_startswith(pLine, "/")) || !g_Config.m_RcTranslateSend)
+		Msg.m_pMessage = pLine;
+	else
+		Msg.m_pMessage = GameClient()->m_Translate.TranslateSend(pLine);
 	Client()->SendPackMsgActive(&Msg, MSGFLAG_VITAL);
 }
 

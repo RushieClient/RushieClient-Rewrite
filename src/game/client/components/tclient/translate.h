@@ -18,6 +18,7 @@ public:
 	virtual bool CompareTargets(const char *pA, const char *pB) const;
 	virtual const char *Name() const = 0;
 	virtual std::optional<bool> Update(CTranslateResponse &Out) = 0;
+	virtual void Wait() {}
 };
 
 class CTranslate : public CComponent
@@ -46,6 +47,8 @@ public:
 	void Translate(CChat::CLine &Line, bool ShowProgress = true);
 
 	void AutoTranslate(CChat::CLine &Line);
+	const char *TranslateSend(const char *Line);
+	char m_TranslateSendChar[1024];
 };
 
 #endif

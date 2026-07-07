@@ -127,6 +127,11 @@ public:
 		if(m_pHttpRequest)
 			m_pHttpRequest->Abort();
 	}
+	void Wait() override
+	{
+		if(m_pHttpRequest)
+			m_pHttpRequest->Wait();
+	}
 };
 
 class CTranslateBackendLibretranslate : public ITranslateBackendHttp
@@ -222,7 +227,7 @@ public:
 	{
 		return "LibreTranslate";
 	}
-	CTranslateBackendLibretranslate(IHttp &Http, const char *pText)
+	CTranslateBackendLibretranslate(IHttp &Http, const char *pText, bool SendTranslate = false)
 	{
 		CJsonStringWriter Json = CJsonStringWriter();
 		Json.BeginObject();
@@ -231,7 +236,7 @@ public:
 		Json.WriteAttribute("source");
 		Json.WriteStrValue("auto");
 		Json.WriteAttribute("target");
-		Json.WriteStrValue(EncodeTarget(g_Config.m_TcTranslateTarget));
+		Json.WriteStrValue(ITranslateBackend::EncodeTarget(SendTranslate ? g_Config.m_RcTranslateSendTarget : g_Config.m_TcTranslateTarget));
 		Json.WriteAttribute("format");
 		Json.WriteStrValue("text");
 		if(g_Config.m_TcTranslateKey[0] != '\0')
@@ -316,12 +321,12 @@ public:
 	{
 		return "FreeTranslateAPI";
 	}
-	CTranslateBackendFtapi(IHttp &Http, const char *pText)
+	CTranslateBackendFtapi(IHttp &Http, const char *pText, bool SendTranslate = false)
 	{
 		char aBuf[4096];
 		str_format(aBuf, sizeof(aBuf), "%s/translate?dl=%s&text=",
 			g_Config.m_TcTranslateEndpoint[0] != '\0' ? g_Config.m_TcTranslateEndpoint : "https://ftapi.pythonanywhere.com",
-			EncodeTarget(g_Config.m_TcTranslateTarget));
+			CTranslateBackendFtapi::EncodeTarget(SendTranslate ? g_Config.m_RcTranslateSendTarget : g_Config.m_TcTranslateTarget));
 
 		UrlEncode(pText, aBuf + strlen(aBuf), sizeof(aBuf) - strlen(aBuf));
 
@@ -411,20 +416,14 @@ public:
 	{
 		return "googlegtx";
 	}
-	CTranslateBackendGTX(IHttp &Http, const char *pText)
+	CTranslateBackendGTX(IHttp &Http, const char *pText, bool SendTranslate = false)
 	{
-		CJsonStringWriter Json = CJsonStringWriter();
-		Json.BeginObject();
-		Json.WriteAttribute("q");
-		Json.WriteStrValue(pText);
-		Json.WriteAttribute("sl");
-		Json.WriteStrValue("auto");
-		Json.WriteAttribute("tl");
-		Json.WriteStrValue(EncodeTarget(g_Config.m_TcTranslateTarget));
-		Json.EndObject();
-		CreateHttpRequest(Http, g_Config.m_TcTranslateEndpoint[0] == '\0' ? "https://translate.google.com/translate_a/single?client=gtx&dt=t" : g_Config.m_TcTranslateEndpoint);
-		const char *pJson = Json.GetOutputString().c_str();
-		m_pHttpRequest->PostJson(pJson);
+		char aBuf[4096];
+		str_format(aBuf, sizeof(aBuf), "%s/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&q=",
+			g_Config.m_TcTranslateEndpoint[0] != '\0' ? g_Config.m_TcTranslateEndpoint : "https://translate.googleapis.com",
+			CTranslateBackendGTX::EncodeTarget(SendTranslate ? g_Config.m_RcTranslateSendTarget : g_Config.m_TcTranslateTarget));
+		UrlEncode(pText, aBuf + strlen(aBuf), sizeof(aBuf) - strlen(aBuf));
+		CreateHttpRequest(Http, aBuf);
 	}
 };
 
@@ -521,7 +520,7 @@ public:
 	{
 		return "Fedilab";
 	}
-	CTranslateBackendFedilab(IHttp &Http, const char *pText)
+	CTranslateBackendFedilab(IHttp &Http, const char *pText, bool SendTranslate = false)
 	{
 		CJsonStringWriter Json = CJsonStringWriter();
 		Json.BeginObject();
@@ -533,10 +532,10 @@ public:
 		Json.WriteStrValue(EncodeTarget(g_Config.m_TcTranslateTarget));
 		Json.WriteAttribute("format");
 		Json.WriteStrValue("text");
-		if(g_Config.m_TcTranslateKey[0] != '\0')
+		if((!SendTranslate && g_Config.m_TcTranslateKey[0] != '\0') || (SendTranslate && g_Config.m_RcTranslateSendTarget[0] != '\0'))
 		{
 			Json.WriteAttribute("api_key");
-			Json.WriteStrValue(g_Config.m_TcTranslateKey);
+			Json.WriteStrValue(SendTranslate ? g_Config.m_RcTranslateSendTarget : g_Config.m_TcTranslateTarget);
 		}
 		Json.EndObject();
 		CreateHttpRequest(Http, g_Config.m_TcTranslateEndpoint[0] == '\0' ? "https://translate.fedilab.app/translate" : g_Config.m_TcTranslateEndpoint);
@@ -717,4 +716,34 @@ void CTranslate::AutoTranslate(CChat::CLine &Line)
 		return;
 	}
 	Translate(Line, false);
+}
+
+// Rushie
+const char *CTranslate::TranslateSend(const char *Line)
+{
+	std::unique_ptr<ITranslateBackend> pBackend;
+
+	if(str_comp_nocase(g_Config.m_TcTranslateBackend, "libretranslate") == 0)
+		pBackend = std::make_unique<CTranslateBackendLibretranslate>(*Http(), Line, true);
+	else if(str_comp_nocase(g_Config.m_TcTranslateBackend, "ftapi") == 0)
+		pBackend = std::make_unique<CTranslateBackendFtapi>(*Http(), Line, true);
+	else if(str_comp_nocase(g_Config.m_TcTranslateBackend, "googlegtx") == 0)
+		pBackend = std::make_unique<CTranslateBackendGTX>(*Http(), Line, true);
+	else if(str_comp_nocase(g_Config.m_TcTranslateBackend, "fedilab") == 0)
+		pBackend = std::make_unique<CTranslateBackendFedilab>(*Http(), Line, true);
+	else
+	{
+		GameClient()->m_Chat.Echo("Invalid translate backend");
+		return "Error: Invalid translate backend";
+	}
+
+	pBackend->Wait();
+	CTranslateResponse Response;
+	pBackend->Update(Response);
+
+	if(str_startswith(Response.m_Text, "Got http code") || !str_comp(Response.m_Text, "Curl error, see console") || !str_comp(Response.m_Text, "Aborted") || !str_comp(Response.m_Text, "Error: Invalid translate backend"))
+		str_copy(m_TranslateSendChar, Line);
+	else
+		str_copy(m_TranslateSendChar, Response.m_Text);
+	return m_TranslateSendChar;
 }

@@ -35,6 +35,7 @@ class CTranslate : public CComponent
 		// For text translations
 		std::unique_ptr<CRClient::CLineTranslate> m_pLineTranslate = nullptr;
 		bool m_pIsTextTranslate = false;
+		char m_TextPrefix[64] = "";
 	};
 	std::vector<CTranslateJob> m_vJobs;
 

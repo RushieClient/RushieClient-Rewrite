@@ -640,14 +640,26 @@ void CTranslate::Translate(CChat::CLine &Line, bool ShowProgress)
 	Job.m_pTranslateResponse = std::make_shared<CTranslateResponse>();
 	Job.m_pLine->m_pTranslateResponse = Job.m_pTranslateResponse;
 
+	const char *pTextToTranslate = Line.m_aText;
+	const char *pColon = str_find(Line.m_aText, ": ");
+	if(pColon && pColon != Line.m_aText)
+	{
+		size_t PrefixLen = pColon - Line.m_aText + 2;
+		if(PrefixLen < sizeof(Job.m_TextPrefix))
+		{
+			str_copy(Job.m_TextPrefix, Line.m_aText, PrefixLen + 1);
+			pTextToTranslate = Line.m_aText + PrefixLen;
+		}
+	}
+
 	if(str_comp_nocase(g_Config.m_TcTranslateBackend, "libretranslate") == 0)
-		Job.m_pBackend = std::make_unique<CTranslateBackendLibretranslate>(*Http(), Job.m_pLine->m_aText);
+		Job.m_pBackend = std::make_unique<CTranslateBackendLibretranslate>(*Http(), pTextToTranslate);
 	else if(str_comp_nocase(g_Config.m_TcTranslateBackend, "ftapi") == 0)
-		Job.m_pBackend = std::make_unique<CTranslateBackendFtapi>(*Http(), Job.m_pLine->m_aText);
+		Job.m_pBackend = std::make_unique<CTranslateBackendFtapi>(*Http(), pTextToTranslate);
 	else if(str_comp_nocase(g_Config.m_TcTranslateBackend, "googlegtx") == 0)
-		Job.m_pBackend = std::make_unique<CTranslateBackendGTX>(*Http(), Job.m_pLine->m_aText);
+		Job.m_pBackend = std::make_unique<CTranslateBackendGTX>(*Http(), pTextToTranslate);
 	else if(str_comp_nocase(g_Config.m_TcTranslateBackend, "fedilab") == 0)
-		Job.m_pBackend = std::make_unique<CTranslateBackendFedilab>(*Http(), Job.m_pLine->m_aText);
+		Job.m_pBackend = std::make_unique<CTranslateBackendFedilab>(*Http(), pTextToTranslate);
 	else
 	{
 		GameClient()->m_Chat.Echo("Invalid translate backend");
@@ -685,6 +697,12 @@ void CTranslate::OnRender()
 			{
 				if(str_comp_nocase(Job.m_pLine->m_aText, Job.m_pTranslateResponse->m_Text) == 0) // Check for no translation difference
 					Job.m_pTranslateResponse->m_Text[0] = '\0';
+				else if(Job.m_TextPrefix[0] != '\0')
+				{
+					char aBuf[sizeof(Job.m_pTranslateResponse->m_Text)];
+					str_format(aBuf, sizeof(aBuf), "%s%s", Job.m_TextPrefix, Job.m_pTranslateResponse->m_Text);
+					str_copy(Job.m_pTranslateResponse->m_Text, aBuf);
+				}
 			}
 			else
 			{
@@ -708,6 +726,12 @@ void CTranslate::OnRender()
 			{
 				if(str_comp_nocase(Job.m_pLineTranslate->m_aText, Job.m_pTranslateResponse->m_Text) == 0) // Check for no translation difference
 					Job.m_pTranslateResponse->m_Text[0] = '\0';
+				else if(Job.m_TextPrefix[0] != '\0')
+				{
+					char aBuf[sizeof(Job.m_pTranslateResponse->m_Text)];
+					str_format(aBuf, sizeof(aBuf), "%s%s", Job.m_TextPrefix, Job.m_pTranslateResponse->m_Text);
+					str_copy(Job.m_pTranslateResponse->m_Text, aBuf);
+				}
 			}
 			else
 			{
@@ -756,7 +780,20 @@ void CTranslate::TranslateSend(const char *Line, int WorkId, int m_JobIntVariabl
 	Job.m_pLineTranslate->m_JobIntVariable = m_JobIntVariable;
 	Job.m_pIsTextTranslate = true;
 	Job.m_pLineTranslate->m_WorkId = WorkId;
-	str_copy(Job.m_pLineTranslate->m_aText, Line);
+
+	const char *pTextToTranslate = Line;
+	const char *pColon = str_find(Line, ": ");
+	if(pColon && pColon != Line)
+	{
+		size_t PrefixLen = pColon - Line + 2;
+		if(PrefixLen < sizeof(Job.m_TextPrefix))
+		{
+			str_copy(Job.m_TextPrefix, Line, PrefixLen + 1);
+			pTextToTranslate = Line + PrefixLen;
+		}
+	}
+
+	str_copy(Job.m_pLineTranslate->m_aText, pTextToTranslate);
 	Job.m_pTranslateResponse = std::make_shared<CTranslateResponse>();
 	Job.m_pLineTranslate->m_pTranslateResponse = Job.m_pTranslateResponse;
 

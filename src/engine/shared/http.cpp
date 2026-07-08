@@ -53,13 +53,6 @@ void EscapeUrl(char *pBuf, int Size, const char *pStr)
 	curl_free(pEsc);
 }
 
-void UnEscapeUrl(char *pBuf, int Size, const char *pStr)
-{
-	char *pEsc = curl_easy_unescape(nullptr, pStr, 0, nullptr);
-	str_copy(pBuf, pEsc, Size);
-	curl_free(pEsc);
-}
-
 bool HttpHasIpresolveBug()
 {
 	// curl < 7.77.0 doesn't use CURLOPT_IPRESOLVE correctly wrt.

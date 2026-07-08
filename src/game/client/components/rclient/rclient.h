@@ -4,6 +4,7 @@
 #include "engine/shared/http.h"
 #include <engine/shared/console.h>
 #include <game/client/component.h>
+#include <game/client/components/chat.h>
 
 class CRClient : public CComponent
 {
@@ -90,6 +91,18 @@ public:
 	// Message Filter
 	const char *FilterMessage(const char *Message, bool IsChat = false, int ClientId = -1);
 	std::string m_FilteredMessage;
+
+	// Translate
+	class CLineTranslate
+	{
+	public:
+		CLineTranslate();
+		char m_aText[256];
+		int m_WorkId = -1; // 0-ChatSend
+		int m_JobIntVariable = -1;
+		std::shared_ptr<CTranslateResponse> m_pTranslateResponse;
+	};
+	void DoTranslateWork(CTranslateResponse &TranslatedClass, CLineTranslate &LineForTranslate);
 };
 
 #endif //GAME_CLIENT_COMPONENTS_RCLIENT_RCLIENT_H

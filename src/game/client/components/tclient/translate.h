@@ -1,6 +1,8 @@
 #ifndef GAME_CLIENT_COMPONENTS_TCLIENT_TRANSLATE_H
 #define GAME_CLIENT_COMPONENTS_TCLIENT_TRANSLATE_H
 
+#include "game/client/components/rclient/rclient.h"
+
 #include <game/client/component.h>
 #include <game/client/components/chat.h>
 
@@ -30,6 +32,9 @@ class CTranslate : public CComponent
 		// For chat translations
 		CChat::CLine *m_pLine = nullptr;
 		std::shared_ptr<CTranslateResponse> m_pTranslateResponse = nullptr;
+		// For text translations
+		std::unique_ptr<CRClient::CLineTranslate> m_pLineTranslate = nullptr;
+		bool m_pIsTextTranslate = false;
 	};
 	std::vector<CTranslateJob> m_vJobs;
 
@@ -47,8 +52,7 @@ public:
 	void Translate(CChat::CLine &Line, bool ShowProgress = true);
 
 	void AutoTranslate(CChat::CLine &Line);
-	const char *TranslateSend(const char *Line);
-	char m_TranslateSendChar[1024];
+	void TranslateSend(const char *Line, int WorkId, int m_JobIntVariable = -1);
 };
 
 #endif

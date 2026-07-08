@@ -1009,3 +1009,27 @@ const char *CRClient::FilterMessage(const char *Message, bool IsChat, int Client
 	}
 	return Message;
 }
+
+// Translated
+CRClient::CLineTranslate::CLineTranslate()
+{
+	m_aText[0] = '\0';
+	m_WorkId = -1;
+	m_JobIntVariable = -1;
+}
+
+void CRClient::DoTranslateWork(CTranslateResponse &TranslatedClass, CLineTranslate &LineForTranslate)
+{
+	if(TranslatedClass.m_Error)
+	{
+		FastPrint(GameClient(), "Translate", TranslatedClass.m_Text);
+		FastEcho(GameClient(), "Error, check console");
+		return;
+	}
+
+	if(LineForTranslate.m_WorkId == 0)
+	{
+		GameClient()->m_Chat.SendChat(LineForTranslate.m_JobIntVariable, TranslatedClass.m_Text, true);
+	}
+
+}

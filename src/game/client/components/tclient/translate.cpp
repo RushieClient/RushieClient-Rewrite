@@ -674,26 +674,51 @@ void CTranslate::OnRender()
 {
 	const auto Time = time();
 	auto ForEach = [&](CTranslateJob &Job) {
-		if(Job.m_pLine->m_pTranslateResponse != Job.m_pTranslateResponse)
-			return true; // Not the same line anymore
-		const std::optional<bool> Done = Job.m_pBackend->Update(*Job.m_pTranslateResponse);
-		if(!Done.has_value())
-			return false; // Keep ongoing tasks
-		if(*Done)
+		if(!Job.m_pIsTextTranslate)
 		{
-			if(str_comp_nocase(Job.m_pLine->m_aText, Job.m_pTranslateResponse->m_Text) == 0) // Check for no translation difference
-				Job.m_pTranslateResponse->m_Text[0] = '\0';
+			if(Job.m_pLine->m_pTranslateResponse != Job.m_pTranslateResponse)
+				return true; // Not the same line anymore
+			const std::optional<bool> Done = Job.m_pBackend->Update(*Job.m_pTranslateResponse);
+			if(!Done.has_value())
+				return false; // Keep ongoing tasks
+			if(*Done)
+			{
+				if(str_comp_nocase(Job.m_pLine->m_aText, Job.m_pTranslateResponse->m_Text) == 0) // Check for no translation difference
+					Job.m_pTranslateResponse->m_Text[0] = '\0';
+			}
+			else
+			{
+				char aBuf[sizeof(Job.m_pTranslateResponse->m_Text)];
+				str_format(aBuf, sizeof(aBuf), TCLocalize("%s to %s failed: %s", "translate"), Job.m_pBackend->Name(), g_Config.m_TcTranslateTarget, Job.m_pTranslateResponse->m_Text);
+				Job.m_pTranslateResponse->m_Error = true;
+				str_copy(Job.m_pTranslateResponse->m_Text, aBuf);
+			}
+			Job.m_pLine->m_Time = Time;
+			GameClient()->m_Chat.RebuildChat();
+			return true;
 		}
 		else
 		{
-			char aBuf[sizeof(Job.m_pTranslateResponse->m_Text)];
-			str_format(aBuf, sizeof(aBuf), TCLocalize("%s to %s failed: %s", "translate"), Job.m_pBackend->Name(), g_Config.m_TcTranslateTarget, Job.m_pTranslateResponse->m_Text);
-			Job.m_pTranslateResponse->m_Error = true;
-			str_copy(Job.m_pTranslateResponse->m_Text, aBuf);
+			if(Job.m_pLineTranslate->m_pTranslateResponse != Job.m_pTranslateResponse)
+				return true; // Not the same line anymore
+			const std::optional<bool> Done = Job.m_pBackend->Update(*Job.m_pTranslateResponse);
+			if(!Done.has_value())
+				return false; // Keep ongoing tasks
+			if(*Done)
+			{
+				if(str_comp_nocase(Job.m_pLineTranslate->m_aText, Job.m_pTranslateResponse->m_Text) == 0) // Check for no translation difference
+					Job.m_pTranslateResponse->m_Text[0] = '\0';
+			}
+			else
+			{
+				char aBuf[sizeof(Job.m_pTranslateResponse->m_Text)];
+				str_format(aBuf, sizeof(aBuf), TCLocalize("%s to %s failed: %s", "translate"), Job.m_pBackend->Name(), g_Config.m_TcTranslateTarget, Job.m_pTranslateResponse->m_Text);
+				Job.m_pTranslateResponse->m_Error = true;
+				str_copy(Job.m_pTranslateResponse->m_Text, aBuf);
+			}
+			GameClient()->m_RClient.DoTranslateWork(*Job.m_pTranslateResponse, *Job.m_pLineTranslate);
+			return true;
 		}
-		Job.m_pLine->m_Time = Time;
-		GameClient()->m_Chat.RebuildChat();
-		return true;
 	};
 	m_vJobs.erase(std::remove_if(m_vJobs.begin(), m_vJobs.end(), ForEach), m_vJobs.end());
 }
@@ -719,31 +744,36 @@ void CTranslate::AutoTranslate(CChat::CLine &Line)
 }
 
 // Rushie
-const char *CTranslate::TranslateSend(const char *Line)
+void CTranslate::TranslateSend(const char *Line, int WorkId, int m_JobIntVariable)
 {
-	std::unique_ptr<ITranslateBackend> pBackend;
+	if(m_vJobs.size() > 15)
+	{
+		return;
+	}
+
+	CTranslateJob Job;
+	Job.m_pLineTranslate = std::make_unique<CRClient::CLineTranslate>();
+	Job.m_pLineTranslate->m_JobIntVariable = m_JobIntVariable;
+	Job.m_pIsTextTranslate = true;
+	Job.m_pLineTranslate->m_WorkId = WorkId;
+	str_copy(Job.m_pLineTranslate->m_aText, Line);
+	Job.m_pTranslateResponse = std::make_shared<CTranslateResponse>();
+	Job.m_pLineTranslate->m_pTranslateResponse = Job.m_pTranslateResponse;
 
 	if(str_comp_nocase(g_Config.m_TcTranslateBackend, "libretranslate") == 0)
-		pBackend = std::make_unique<CTranslateBackendLibretranslate>(*Http(), Line, true);
+		Job.m_pBackend = std::make_unique<CTranslateBackendLibretranslate>(*Http(), Job.m_pLineTranslate->m_aText, true);
 	else if(str_comp_nocase(g_Config.m_TcTranslateBackend, "ftapi") == 0)
-		pBackend = std::make_unique<CTranslateBackendFtapi>(*Http(), Line, true);
+		Job.m_pBackend = std::make_unique<CTranslateBackendFtapi>(*Http(), Job.m_pLineTranslate->m_aText, true);
 	else if(str_comp_nocase(g_Config.m_TcTranslateBackend, "googlegtx") == 0)
-		pBackend = std::make_unique<CTranslateBackendGTX>(*Http(), Line, true);
+		Job.m_pBackend = std::make_unique<CTranslateBackendGTX>(*Http(), Job.m_pLineTranslate->m_aText, true);
 	else if(str_comp_nocase(g_Config.m_TcTranslateBackend, "fedilab") == 0)
-		pBackend = std::make_unique<CTranslateBackendFedilab>(*Http(), Line, true);
+		Job.m_pBackend = std::make_unique<CTranslateBackendFedilab>(*Http(), Job.m_pLineTranslate->m_aText, true);
 	else
 	{
 		GameClient()->m_Chat.Echo("Invalid translate backend");
-		return "Error: Invalid translate backend";
+		return;
 	}
 
-	pBackend->Wait();
-	CTranslateResponse Response;
-	pBackend->Update(Response);
-
-	if(str_startswith(Response.m_Text, "Got http code") || !str_comp(Response.m_Text, "Curl error, see console") || !str_comp(Response.m_Text, "Aborted") || !str_comp(Response.m_Text, "Error: Invalid translate backend"))
-		str_copy(m_TranslateSendChar, Line);
-	else
-		str_copy(m_TranslateSendChar, Response.m_Text);
-	return m_TranslateSendChar;
+	Job.m_pTranslateResponse->m_Text[0] = '\0';
+	m_vJobs.emplace_back(std::move(Job));
 }

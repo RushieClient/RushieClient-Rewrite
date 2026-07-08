@@ -1,7 +1,5 @@
 #include "translate.h"
 
-#include "curl/curl.h"
-
 #include <base/log.h>
 
 #include <engine/shared/json.h>
@@ -14,21 +12,6 @@
 
 #include <algorithm>
 #include <memory>
-
-std::string url_encode(const std::string& decoded) {
-	const auto encoded_value = curl_easy_escape(nullptr, decoded.c_str(), static_cast<int>(decoded.length()));
-	std::string result(encoded_value);
-	curl_free(encoded_value);
-	return result;
-}
-
-std::string url_decode(const std::string& encoded) {
-	int output_length;
-	const auto decoded_value = curl_easy_unescape(nullptr, encoded.c_str(), static_cast<int>(encoded.length()), &output_length);
-	std::string result(decoded_value, output_length);
-	curl_free(decoded_value);
-	return result;
-}
 
 static void UrlEncode(const char *pText, char *pOut, size_t Length)
 {
@@ -405,7 +388,9 @@ private:
 			return false;
 		}
 
-		str_copy(Out.m_Text, url_decode(AllStringsInJson).c_str());
+		char DecodedText[512];
+		UnEscapeUrl(DecodedText, sizeof(DecodedText), AllStringsInJson.c_str());
+		str_copy(Out.m_Text, DecodedText);
 		str_utf8_fix_truncation(Out.m_Text);
 		str_copy(Out.m_Language, pDetectedLanguage->u.string.ptr);
 
@@ -435,11 +420,14 @@ public:
 	CTranslateBackendGTX(IHttp &Http, const char *pText, bool SendTranslate = false)
 	{
 		char aBuf[4096];
-		str_format(aBuf, sizeof(aBuf), "%s/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&q=",
+		char aUrl[4096];
+		EscapeUrl(aBuf, sizeof(aBuf), pText);
+		str_format(aUrl, sizeof(aBuf), "%s/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&q=%s",
 			g_Config.m_TcTranslateEndpoint[0] != '\0' ? g_Config.m_TcTranslateEndpoint : "https://translate.googleapis.com",
-			CTranslateBackendGTX::EncodeTarget(SendTranslate ? g_Config.m_RcTranslateSendTarget : g_Config.m_TcTranslateTarget));
-		str_format(aBuf, sizeof(aBuf), "%s%s", aBuf, url_encode(pText).c_str());
-		CreateHttpRequest(Http, aBuf);
+			CTranslateBackendGTX::EncodeTarget(SendTranslate ? g_Config.m_RcTranslateSendTarget : g_Config.m_TcTranslateTarget),
+			aBuf);
+		dbg_msg("wtf", "%s", aUrl);
+		CreateHttpRequest(Http, aUrl);
 	}
 };
 

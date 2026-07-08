@@ -305,6 +305,14 @@ void EscapeUrl(char (&aBuf)[N], const char *pStr)
 	EscapeUrl(aBuf, N, pStr);
 }
 
+void UnEscapeUrl(char *pBuf, int Size, const char *pStr);
+
+template<int N>
+void UnEscapeUrl(char (&aBuf)[N], const char *pStr)
+{
+	UnEscapeUrl(aBuf, N, pStr);
+}
+
 bool HttpHasIpresolveBug();
 
 // In an ideal world this would be a kernel interface

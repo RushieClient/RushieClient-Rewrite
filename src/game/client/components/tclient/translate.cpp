@@ -1,5 +1,7 @@
 #include "translate.h"
 
+#include "curl/curl.h"
+
 #include <base/log.h>
 
 #include <engine/shared/json.h>
@@ -12,6 +14,21 @@
 
 #include <algorithm>
 #include <memory>
+
+std::string url_encode(const std::string& decoded) {
+	const auto encoded_value = curl_easy_escape(nullptr, decoded.c_str(), static_cast<int>(decoded.length()));
+	std::string result(encoded_value);
+	curl_free(encoded_value);
+	return result;
+}
+
+std::string url_decode(const std::string& encoded) {
+	int output_length;
+	const auto decoded_value = curl_easy_unescape(nullptr, encoded.c_str(), static_cast<int>(encoded.length()), &output_length);
+	std::string result(decoded_value, output_length);
+	curl_free(decoded_value);
+	return result;
+}
 
 static void UrlEncode(const char *pText, char *pOut, size_t Length)
 {
@@ -360,19 +377,17 @@ private:
 		}
 
 		Out.m_Text[0] = '\0';
+		std::string AllStringsInJson;
 		for(int i = 0; i < json_array_length(pSentences); i++)
 		{
 			const json_value *pTranslatedText = json_array_get(json_array_get(pSentences, i), 0);
 			if(pTranslatedText == &json_value_none || pTranslatedText->type != json_string)
 				continue;
 
-			size_t CurrentLen = str_length(Out.m_Text);
-			if(CurrentLen >= sizeof(Out.m_Text) - 1)
-				break;
-			UrlDecode(pTranslatedText->u.string.ptr, Out.m_Text + CurrentLen, sizeof(Out.m_Text) - CurrentLen);
+			AllStringsInJson += pTranslatedText->u.string.ptr;
 		}
 
-		if(Out.m_Text[0] == '\0')
+		if(AllStringsInJson.c_str()[0] == '\0')
 		{
 			str_copy(Out.m_Text, "No destination-text");
 			return false;
@@ -390,6 +405,7 @@ private:
 			return false;
 		}
 
+		str_copy(Out.m_Text, url_decode(AllStringsInJson).c_str());
 		str_utf8_fix_truncation(Out.m_Text);
 		str_copy(Out.m_Language, pDetectedLanguage->u.string.ptr);
 
@@ -422,7 +438,7 @@ public:
 		str_format(aBuf, sizeof(aBuf), "%s/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&q=",
 			g_Config.m_TcTranslateEndpoint[0] != '\0' ? g_Config.m_TcTranslateEndpoint : "https://translate.googleapis.com",
 			CTranslateBackendGTX::EncodeTarget(SendTranslate ? g_Config.m_RcTranslateSendTarget : g_Config.m_TcTranslateTarget));
-		UrlEncode(pText, aBuf + strlen(aBuf), sizeof(aBuf) - strlen(aBuf));
+		str_format(aBuf, sizeof(aBuf), "%s%s", aBuf, url_encode(pText).c_str());
 		CreateHttpRequest(Http, aBuf);
 	}
 };
@@ -725,7 +741,7 @@ void CTranslate::OnRender()
 			if(*Done)
 			{
 				if(str_comp_nocase(Job.m_pLineTranslate->m_aText, Job.m_pTranslateResponse->m_Text) == 0) // Check for no translation difference
-					Job.m_pTranslateResponse->m_Text[0] = '\0';
+					str_copy(Job.m_pTranslateResponse->m_Text, Job.m_pLineTranslate->m_aText, sizeof(Job.m_pTranslateResponse->m_Text));
 				else if(Job.m_TextPrefix[0] != '\0')
 				{
 					char aBuf[sizeof(Job.m_pTranslateResponse->m_Text)];

@@ -320,11 +320,11 @@ protected:
 		if(!m_Visible)
 			return false;
 		m_Color.a = Data.m_Color.a;
-		return m_FontSize != Data.m_FontSize;
+		return m_FontSize != Data.m_FontSize / 100.0f * g_Config.m_RcSizeOfHeart;
 	}
 	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
 	{
-		m_FontSize = Data.m_FontSize;
+		m_FontSize = Data.m_FontSize / 100.0f * g_Config.m_RcSizeOfHeart;
 		CTextCursor Cursor;
 		This.TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 		Cursor.m_FontSize = m_FontSize;

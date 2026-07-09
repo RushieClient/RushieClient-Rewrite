@@ -744,6 +744,24 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				Cursor.m_FontSize = FontSize;
 				Cursor.m_Flags |= TEXTFLAG_ELLIPSIS_AT_END;
 				Cursor.m_LineWidth = NameLength;
+
+				// RClient Heart
+				if(pInfo->m_ClientId >= 0 && (GameClient()->m_aClients[pInfo->m_ClientId].m_Friend) && g_Config.m_RcShowHeartInScoreboard)
+				{
+					const float HeartFontSize = FontSize / 100.0f * g_Config.m_RcSizeOfHeart;
+					const float OriginalY = Cursor.m_Y;
+					Cursor.m_Y = Row.y + (Row.h - HeartFontSize) / 2.0f;
+					Cursor.m_FontSize = HeartFontSize;
+					TextRender()->TextColor(ColorRGBA(1.0f, 0.0f, 0.0f, 1.0f));
+					TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+					TextRender()->TextEx(&Cursor, FontIcon::HEART);
+					TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+					TextRender()->TextColor(TextRender()->DefaultTextColor());
+					TextRender()->TextEx(&Cursor, " ");
+					Cursor.m_Y = OriginalY;
+					Cursor.m_FontSize = FontSize;
+				}
+
 				if(ClientData.m_AuthLevel)
 				{
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClAuthedPlayerColor)));

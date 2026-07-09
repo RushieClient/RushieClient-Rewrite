@@ -103,6 +103,16 @@ public:
 		std::shared_ptr<CTranslateResponse> m_pTranslateResponse;
 	};
 	void DoTranslateWork(CTranslateResponse &TranslatedClass, CLineTranslate &LineForTranslate);
+
+
+	// Verison
+	std::shared_ptr<CHttpRequest> m_pRClientInfoTask = nullptr;
+	void FetchRClientInfo();
+	void FinishRClientInfo();
+	void ResetRClientInfoTask();
+	bool NeedUpdate();
+	bool m_FetchedRClientInfo = false;
+	char m_aVersionStr[10] = "0";
 };
 
 #endif //GAME_CLIENT_COMPONENTS_RCLIENT_RCLIENT_H

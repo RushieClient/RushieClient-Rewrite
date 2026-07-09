@@ -3,7 +3,11 @@
 #include "base/str.h"
 #include "engine/shared/config.h"
 #include "game/client/gameclient.h"
+#include "game/version.h"
+
 #include <engine/shared/json.h>
+
+static constexpr const char *RCLIENT_INFO_URL = "https://server.rushie-client.ru/version";
 
 CRClient::CRClient()
 {
@@ -17,7 +21,7 @@ void CRClient::OnReset()
 
 void CRClient::OnInit()
 {
-
+	FetchRClientInfo();
 }
 
 void CRClient::OnRender()
@@ -29,6 +33,15 @@ void CRClient::OnRender()
 	}
 	if(g_Config.m_RcPlayerClanAutoChange)
 		DummyConnectedClan(Client()->DummyConnected());
+
+	if(m_pRClientInfoTask)
+	{
+		if(m_pRClientInfoTask->State() == EHttpState::DONE)
+		{
+			FinishRClientInfo();
+			ResetRClientInfoTask();
+		}
+	}
 }
 
 void CRClient::OnConsoleInit()
@@ -155,6 +168,85 @@ static void FastEcho(CGameClient *pGameClient, const char *pFmt, ...)
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
+
+//Version
+void CRClient::FetchRClientInfo()
+{
+	if(m_pRClientInfoTask && !m_pRClientInfoTask->Done())
+		return;
+	char aUrl[256];
+	str_copy(aUrl, RCLIENT_INFO_URL);
+	m_pRClientInfoTask = HttpGet(aUrl);
+	m_pRClientInfoTask->Timeout(CTimeout{10000, 0, 500, 10});
+	m_pRClientInfoTask->IpResolve(IPRESOLVE::V4);
+	Http()->Run(m_pRClientInfoTask);
+}
+
+typedef std::tuple<int, int, int> TVersion;
+static const TVersion gs_InvalidTCVersion = std::make_tuple(-1, -1, -1);
+
+static TVersion ToTCVersion(char *pStr)
+{
+	int aVersion[3] = {0, 0, 0};
+	const char *p = strtok(pStr, ".");
+
+	for(int i = 0; i < 3 && p; ++i)
+	{
+		if(!str_isallnum(p))
+			return gs_InvalidTCVersion;
+
+		aVersion[i] = str_toint(p);
+		p = strtok(NULL, ".");
+	}
+
+	if(p)
+		return gs_InvalidTCVersion;
+
+	return std::make_tuple(aVersion[0], aVersion[1], aVersion[2]);
+}
+
+void CRClient::FinishRClientInfo()
+{
+	json_value *pJson = m_pRClientInfoTask->ResultJson();
+	if(!pJson)
+		return;
+	const json_value &Json = *pJson;
+	const json_value &CurrentVersion = Json["version"];
+
+	if(CurrentVersion.type == json_string)
+	{
+		char aNewVersionStr[64];
+		str_copy(aNewVersionStr, CurrentVersion);
+		char aCurVersionStr[64];
+		str_copy(aCurVersionStr, RCLIENT_VERSION);
+		if(ToTCVersion(aNewVersionStr) > ToTCVersion(aCurVersionStr))
+		{
+			str_copy(m_aVersionStr, CurrentVersion);
+		}
+		else
+		{
+			m_aVersionStr[0] = '0';
+			m_aVersionStr[1] = '\0';
+		}
+		m_FetchedRClientInfo = true;
+	}
+
+	json_value_free(pJson);
+}
+
+bool CRClient::NeedUpdate()
+{
+	return str_comp(m_aVersionStr, "0") != 0;
+}
+
+void CRClient::ResetRClientInfoTask()
+{
+	if(m_pRClientInfoTask)
+	{
+		m_pRClientInfoTask->Abort();
+		m_pRClientInfoTask = NULL;
+	}
+}
 
 //Dummy clan
 void CRClient::DummyConnectedClan(const bool IsDummyConnected)

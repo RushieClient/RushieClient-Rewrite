@@ -158,21 +158,40 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 
 	CUIRect TClientVersion;
 	MainView.HSplitTop(15.0f, &TClientVersion, &MainView);
+	Ui()->DoLabel(&TClientVersion, "Thanks to Tater,Pulse,Entity Clients for code", 14.0f, TEXTALIGN_MC);
 	TClientVersion.VSplitRight(40.0f, &TClientVersion, nullptr);
+	TClientVersion.VSplitRight(125.0f, nullptr, &TClientVersion);
 	char aTBuf[64];
+	str_format(aTBuf, sizeof(aTBuf), "TClient" " %s", TCLIENT_VERSION);
+	if(GameClient()->m_TClient.NeedUpdate())
+		TextRender()->TextColor(ColorRGBA(1.0f, 0.0f, 0.0f, 1.0f));
+	Ui()->DoLabel(&TClientVersion, aTBuf, 14.0f, TEXTALIGN_MC);
+	TextRender()->TextColor(TextRender()->DefaultTextColor());
+	MainView.HSplitTop(20.0f, &TClientVersion, &MainView);
+	TClientVersion.VSplitRight(40.0f, &TClientVersion, nullptr);
+	TClientVersion.VSplitRight(125.0f, nullptr, &TClientVersion);
 	str_format(aTBuf, sizeof(aTBuf), CLIENT_NAME " %s", CLIENT_RELEASE_VERSION);
-	Ui()->DoLabel(&TClientVersion, aTBuf, 14.0f, TEXTALIGN_MR);
+	if(GameClient()->m_RClient.NeedUpdate())
+		TextRender()->TextColor(ColorRGBA(1.0f, 0.0f, 0.0f, 1.0f));
+	Ui()->DoLabel(&TClientVersion, aTBuf, 14.0f, TEXTALIGN_MC);
+	TextRender()->TextColor(TextRender()->DefaultTextColor());
+
 #if defined(CONF_AUTOUPDATE)
 	CUIRect UpdateToDateText;
 	MainView.HSplitTop(15.0f, &UpdateToDateText, nullptr);
 	UpdateToDateText.VSplitRight(40.0f, &UpdateToDateText, nullptr);
-	if(!GameClient()->m_TClient.NeedUpdate() && GameClient()->m_TClient.m_FetchedTClientInfo)
+	UpdateToDateText.VSplitRight(125.0f, nullptr, &UpdateToDateText);
+	if(!GameClient()->m_RClient.NeedUpdate() && GameClient()->m_RClient.m_FetchedRClientInfo)
 	{
-		Ui()->DoLabel(&UpdateToDateText, TCLocalize("(On Latest)"), 14.0f, TEXTALIGN_MR);
+		Ui()->DoLabel(&UpdateToDateText, TCLocalize("(On Latest)"), 14.0f, TEXTALIGN_MC);
+	}
+	else if (!GameClient()->m_RClient.m_FetchedRClientInfo)
+	{
+		Ui()->DoLabel(&UpdateToDateText, TCLocalize("(Fetching Update Info)"), 14.0f, TEXTALIGN_MC);
 	}
 	else
 	{
-		Ui()->DoLabel(&UpdateToDateText, TCLocalize("(Fetching Update Info)"), 14.0f, TEXTALIGN_MR);
+		Ui()->DoLabel(&UpdateToDateText, TCLocalize("(Need Update)"), 14.0f, TEXTALIGN_MC);
 	}
 #endif
 	static CButtonContainer s_ConsoleButton;
@@ -195,7 +214,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 
 	char aBuf[128];
 	const IUpdater::EUpdaterState State = Updater()->GetCurrentState();
-	const bool NeedUpdate = GameClient()->m_TClient.NeedUpdate();
+	const bool NeedUpdate = GameClient()->m_RClient.NeedUpdate();
 
 	if(State == IUpdater::CLEAN && NeedUpdate)
 	{
@@ -220,7 +239,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 
 	if(State == IUpdater::CLEAN && NeedUpdate)
 	{
-		str_format(aBuf, sizeof(aBuf), Localize("TClient %s is out!"), GameClient()->m_TClient.m_aVersionStr);
+		str_format(aBuf, sizeof(aBuf), Localize("RClient %s is out!"), GameClient()->m_RClient.m_aVersionStr);
 		TextRender()->TextColor(1.0f, 0.4f, 0.4f, 1.0f);
 	}
 	else if(State == IUpdater::CLEAN)

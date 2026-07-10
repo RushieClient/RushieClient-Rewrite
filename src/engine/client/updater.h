@@ -15,26 +15,17 @@
 
 #if defined(CONF_FAMILY_WINDOWS)
 #define PLAT_EXT ".exe"
-#define PLAT_NAME CONF_PLATFORM_STRING
+#define PLAT_URL_OS "windows"
 #elif defined(CONF_FAMILY_UNIX)
 #define PLAT_EXT ""
-#if defined(CONF_ARCH_IA32)
-#define PLAT_NAME CONF_PLATFORM_STRING "-x86"
-#elif defined(CONF_ARCH_AMD64)
-#define PLAT_NAME CONF_PLATFORM_STRING "-x86_64"
-#else
-#define PLAT_NAME CONF_PLATFORM_STRING "-unsupported"
-#endif
+#define PLAT_URL_OS "ubuntu"
 #else
 #if defined(AUTOUPDATE)
 #error Compiling with autoupdater on an unsupported platform
 #endif
 #define PLAT_EXT ""
-#define PLAT_NAME "unsupported-unsupported"
+#define PLAT_URL_OS "unsupported"
 #endif
-
-#define PLAT_CLIENT_DOWN CLIENT_EXEC "-" PLAT_NAME PLAT_EXT
-#define PLAT_SERVER_DOWN SERVER_EXEC "-" PLAT_NAME PLAT_EXT
 
 #define PLAT_CLIENT_EXEC CLIENT_EXEC PLAT_EXT
 #define PLAT_SERVER_EXEC SERVER_EXEC PLAT_EXT
@@ -71,6 +62,9 @@ class CUpdater : public IUpdater
 	void AddFileJob(const char *pFile, bool Job);
 	void FetchFile(const char *pFile, const char *pDestPath = nullptr) REQUIRES(!m_Lock);
 	bool MoveFile(const char *pFile);
+
+	void CleanupOldFiles();
+	static int CleanupOldFileCallback(const char *pName, int IsDir, int DirType, void *pUser);
 
 	void ParseUpdate() REQUIRES(!m_Lock);
 	void PerformUpdate() REQUIRES(!m_Lock);

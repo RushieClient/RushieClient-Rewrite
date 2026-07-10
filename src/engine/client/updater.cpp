@@ -68,9 +68,14 @@ static void UrlEncodePath(const char *pIn, char *pOut, size_t OutSize)
 
 static const char *GetUpdaterUrl(char *pBuf, int BufSize, const char *pFile)
 {
+	if(!str_comp(pFile, "update.json"))
+	{
+		str_copy(pBuf, "https://updates.rushie-client.ru/api/get/updates", BufSize);
+		return pBuf;
+	}
 	char aBuf[1024];
 	UrlEncodePath(pFile, aBuf, sizeof(aBuf));
-	str_format(pBuf, BufSize, "https://update.tclient.app/%s", aBuf);
+	str_format(pBuf, BufSize, "https://updates.rushie-client.ru/latest/" PLAT_URL_OS "/%s", aBuf);
 	return pBuf;
 }
 
@@ -135,6 +140,32 @@ void CUpdater::Init(CHttp *pHttp)
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
 	m_pEngine = Kernel()->RequestInterface<IEngine>();
 	m_pHttp = pHttp;
+
+	CleanupOldFiles();
+}
+
+int CUpdater::CleanupOldFileCallback(const char *pName, int IsDir, int DirType, void *pUser)
+{
+	if(IsDir)
+		return 0;
+
+	const size_t Length = str_length(pName);
+	const bool IsToBeRemoved = Length > 12 && !str_comp_nocase(pName + Length - 12, ".toberemoved");
+	const bool IsOld = Length > 4 && !str_comp_nocase(pName + Length - 4, ".old");
+	if(!IsToBeRemoved && !IsOld)
+		return 0;
+
+	CUpdater *pThis = static_cast<CUpdater *>(pUser);
+	if(pThis->m_pStorage->RemoveBinaryFile(pName))
+		dbg_msg("updater", "removed leftover file '%s'", pName);
+	return 0;
+}
+
+void CUpdater::CleanupOldFiles()
+{
+	char aBinaryDir[IO_MAX_PATH_LENGTH];
+	m_pStorage->GetBinaryPath("", aBinaryDir, sizeof(aBinaryDir));
+	m_pStorage->ListDirectory(IStorage::TYPE_ALL, aBinaryDir, CleanupOldFileCallback, this);
 }
 
 void CUpdater::SetCurrentState(EUpdaterState NewState)
@@ -387,22 +418,14 @@ void CUpdater::RunningUpdate()
 			if(!str_comp_nocase(pFile + Length - 4, ".dll"))
 			{
 #if defined(CONF_FAMILY_WINDOWS)
-				char aBuf[512];
-				str_copy(aBuf, pFile, sizeof(aBuf)); // SDL
-				str_copy(aBuf + Length - 4, "-" PLAT_NAME, sizeof(aBuf) - Length + 4); // -win32
-				str_append(aBuf, pFile + Length - 4); // .dll
-				FetchFile(aBuf, pFile);
+				FetchFile(pFile);
 #endif
 				// Ignore DLL downloads on other platforms
 			}
 			else if(!str_comp_nocase(pFile + Length - 3, ".so"))
 			{
 #if defined(CONF_PLATFORM_LINUX)
-				char aBuf[512];
-				str_copy(aBuf, pFile, sizeof(aBuf)); // libsteam_api
-				str_copy(aBuf + Length - 3, "-" PLAT_NAME, sizeof(aBuf) - Length + 3); // -linux-x86_64
-				str_append(aBuf, pFile + Length - 3); // .so
-				FetchFile(aBuf, pFile);
+				FetchFile(pFile);
 #endif
 				// Ignore DLL downloads on other platforms, on Linux we statically link anyway
 			}
@@ -417,14 +440,14 @@ void CUpdater::RunningUpdate()
 	{
 		if(m_ServerUpdate && !m_ServerFetched)
 		{
-			FetchFile(PLAT_SERVER_DOWN, m_aServerExecTmp);
+			FetchFile(PLAT_SERVER_EXEC, m_aServerExecTmp);
 			m_ServerFetched = true;
 			return;
 		}
 
 		if(m_ClientUpdate && !m_ClientFetched)
 		{
-			FetchFile(PLAT_CLIENT_DOWN, m_aClientExecTmp);
+			FetchFile(PLAT_CLIENT_EXEC, m_aClientExecTmp);
 			m_ClientFetched = true;
 			return;
 		}

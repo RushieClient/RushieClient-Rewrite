@@ -702,6 +702,8 @@ void CTranslate::OnRender()
 					char aBuf[sizeof(Job.m_pTranslateResponse->m_Text)];
 					str_format(aBuf, sizeof(aBuf), "%s%s", Job.m_TextPrefix, Job.m_pTranslateResponse->m_Text);
 					str_copy(Job.m_pTranslateResponse->m_Text, aBuf);
+					if(str_comp_nocase(Job.m_pLine->m_aText, Job.m_pTranslateResponse->m_Text) == 0) // Check for no translation difference
+						Job.m_pTranslateResponse->m_Text[0] = '\0';
 				}
 			}
 			else

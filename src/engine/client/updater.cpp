@@ -415,21 +415,22 @@ void CUpdater::RunningUpdate()
 		{
 			const char *pFile = Job.first.c_str();
 			const size_t Length = str_length(pFile);
-			if(!str_comp_nocase(pFile + Length - 4, ".dll"))
-			{
+			const bool IsDll = !str_comp_nocase(pFile + Length - 4, ".dll");
+			const bool IsSo = !IsDll && !str_comp_nocase(pFile + Length - 3, ".so");
+
 #if defined(CONF_FAMILY_WINDOWS)
-				FetchFile(pFile);
-#endif
-				// Ignore DLL downloads on other platforms
-			}
-			else if(!str_comp_nocase(pFile + Length - 3, ".so"))
+			if(IsDll)
 			{
-#if defined(CONF_PLATFORM_LINUX)
 				FetchFile(pFile);
-#endif
-				// Ignore DLL downloads on other platforms, on Linux we statically link anyway
 			}
-			else
+#endif
+#if defined(CONF_PLATFORM_LINUX)
+			if(IsSo)
+			{
+				FetchFile(pFile);
+			}
+#endif
+			if(!IsDll && !IsSo)
 			{
 				FetchFile(pFile);
 			}

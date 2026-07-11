@@ -61,9 +61,15 @@ void CRClient::OnConsoleInit()
 	Console()->Register("rc_toggle_deepfly", "", CFGFLAG_CLIENT, ConToggleDeepfly, this, "Toggle deepfly");
 	Console()->Register("+rc_small_sens", "", CFGFLAG_CLIENT, ConToggleSmallSens, this, "small sens");
 	Console()->Register("+rc_45_degrees", "", CFGFLAG_CLIENT, ConToggle45Degrees, this, "45degrees");
-	Console()->Register("rc_add_censor_word", "s[word]", CFGFLAG_CLIENT, ConAddCensorWord, this, "Add word to censor list");
-	Console()->Register("rc_remove_censor_word", "s[word]", CFGFLAG_CLIENT, ConRemoveCensorWord, this, "Remove word from censor list");
-	Console()->Register("rc_print_censor_list", "", CFGFLAG_CLIENT, ConPrintCensorList, this, "Print censor list");
+	Console()->Register("rc_message_filter_add_word", "s[word]", CFGFLAG_CLIENT, ConAddCensorWord, this, "Add word to censor list");
+	Console()->Register("rc_message_filter_remove_word", "s[word]", CFGFLAG_CLIENT, ConRemoveCensorWord, this, "Remove word from censor list");
+	Console()->Register("rc_message_filter_print_words", "", CFGFLAG_CLIENT, ConPrintCensorList, this, "Print censor list");
+	Console()->Chain(
+		"rc_message_filter_mode", [](IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData) {
+			((CRClient *)pUserData)->m_CensorMessageListCache.clear();
+			pfnCallback(pResult, pCallbackUserData);
+		},
+		this);
 }
 
 void CRClient::OnMessage(int MsgType, void *pRawMsg)
@@ -112,7 +118,7 @@ void CRClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 	}
 	for(size_t i = 0; i < pSelf->CensorWordsList.size(); i++)
 	{
-		str_format(aBuf, sizeof(aBuf), "rc_add_censor_word %s", pSelf->CensorWordsList[i].c_str());
+		str_format(aBuf, sizeof(aBuf), "rc_message_filter_add_word %s", pSelf->CensorWordsList[i].c_str());
 		pConfigManager->WriteLine(aBuf, ConfigDomain::RCLIENTCENSORLIST);
 	}
 }
@@ -887,6 +893,15 @@ const char *CRClient::FilterMessage(const char *Message, bool IsChat, int Client
 		return Message;
 	}
 
+	for(size_t i = 0; i < m_CensorMessageListCache.size(); i++)
+	{
+		if(!str_utf8_comp_nocase(Message, m_CensorMessageListCache[i].m_BlockedMessage.c_str()))
+		{
+			m_FilteredMessage = m_CensorMessageListCache[i].m_FinalMessage;
+			return m_FilteredMessage.c_str();
+		}
+	}
+
 	bool CensorFoundInMessage = false;
 	std::string text {Message};
 	if(g_Config.m_RcMessageFilterMode == 1)
@@ -940,6 +955,12 @@ const char *CRClient::FilterMessage(const char *Message, bool IsChat, int Client
 			}
 			BlockedMessage += Message;
 			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str());
+		}
+		if(CensorFoundInMessage)
+		{
+			m_CensorMessageListCache.push_back({Message, text});
+			if(m_CensorMessageListCache.size() > 15)
+				m_CensorMessageListCache.erase(m_CensorMessageListCache.cbegin());
 		}
 		m_FilteredMessage = text;
 		return m_FilteredMessage.c_str();
@@ -1002,6 +1023,12 @@ const char *CRClient::FilterMessage(const char *Message, bool IsChat, int Client
 			}
 			BlockedMessage += Message;
 			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str());
+		}
+		if(CensorFoundInMessage)
+		{
+			m_CensorMessageListCache.push_back({Message, text});
+			if(m_CensorMessageListCache.size() > 15)
+				m_CensorMessageListCache.erase(m_CensorMessageListCache.cbegin());
 		}
 		m_FilteredMessage = text;
 		return m_FilteredMessage.c_str();
@@ -1095,6 +1122,12 @@ const char *CRClient::FilterMessage(const char *Message, bool IsChat, int Client
 			}
 			BlockedMessage += Message;
 			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str());
+		}
+		if(CensorFoundInMessage)
+		{
+			m_CensorMessageListCache.push_back({Message, text});
+			if(m_CensorMessageListCache.size() > 15)
+				m_CensorMessageListCache.erase(m_CensorMessageListCache.cbegin());
 		}
 		m_FilteredMessage = text;
 		return m_FilteredMessage.c_str();

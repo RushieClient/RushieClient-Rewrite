@@ -61,6 +61,12 @@ class CRClient : public CComponent
 	static void ConRemoveCensorWord(IConsole::IResult *pResult, void *pUserData);
 	static void ConPrintCensorList(IConsole::IResult *pResult, void *pUserData);
 	std::vector<std::string> CensorWordsList;
+	struct SCensorListCache
+	{
+		std::string m_BlockedMessage;
+		std::string m_FinalMessage;
+	};
+	std::vector<SCensorListCache> m_CensorMessageListCache;
 
 public:
 	CRClient();

@@ -1189,7 +1189,7 @@ void CRClient::DoTranslateWork(CTranslateResponse &TranslatedClass, CLineTransla
 bool CRClient::IsInWarlist(int ClientId, int Index)
 {
 	CWarDataCache &WarData = GameClient()->m_WarList.m_WarPlayers[ClientId];
-	for(int i = 0; i < WarData.m_WarGroupMatches.size(); i++)
+	for(size_t i = 0; i < WarData.m_WarGroupMatches.size(); i++)
 	{
 		if(WarData.m_WarGroupMatches[i])
 		{

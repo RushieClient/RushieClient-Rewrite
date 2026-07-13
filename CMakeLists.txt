@@ -2559,6 +2559,8 @@ if(CLIENT)
     components/envelope_state.h
     components/flow.cpp
     components/flow.h
+    components/entity/chat_bubbles.cpp
+    components/entity/chat_bubbles.h
     components/freezebars.cpp
     components/freezebars.h
     components/ghost.cpp

@@ -41,3 +41,10 @@ MACRO_CONFIG_INT(RcSizeOfHeart, rc_size_of_heart, 100, 0, 200, CFGFLAG_CLIENT | 
 // Scoreboard
 MACRO_CONFIG_INT(RcScoreboardAlwaysShowQuickActions, rc_scoreboard_always_show_quick_actions, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show quick actions in scoreboard always")
 MACRO_CONFIG_INT(RcScoreboardFreezeInputs, rc_scoreboard_freeze_inputs, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Freeze inputs when unlock mouse")
+
+// Chatbubbles
+MACRO_CONFIG_INT(RcChatBubbles, rc_chat_bubbles, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Chatbubbles above players")
+MACRO_CONFIG_INT(RcChatBubbleSize, rc_chat_bubble_size, 20, 15, 30, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Size of the chat bubble")
+MACRO_CONFIG_INT(RcChatBubbleShowTime, rc_chat_bubble_showtime, 200, 200, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How long to show the bubble for")
+MACRO_CONFIG_INT(RcChatBubbleFadeOut, rc_chat_bubble_fadeout, 35, 15, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How long it fades out")
+MACRO_CONFIG_INT(RcChatBubbleFadeIn, rc_chat_bubble_fadein, 15, 15, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "how long it fades in")

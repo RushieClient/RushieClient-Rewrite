@@ -173,6 +173,7 @@ class CChat : public CComponent
 	friend class CBindChat;
 	friend class CTranslate;
 	friend class CTClient;
+	friend class CChatBubbles;
 
 public:
 	CChat();
@@ -227,5 +228,8 @@ public:
 	//
 	// It uses team or public chat depending on m_Mode.
 	void SendChatQueued(const char *pLine);
+
+	//Rclient chatbubbles
+	bool LineHighlighted(int ClientId, const char *pLine);
 };
 #endif

@@ -1524,3 +1524,29 @@ void CChat::SendChatQueued(const char *pLine)
 		str_copy(pEntry->m_aText, pLine, Length + 1);
 	}
 }
+
+// Rclient chat bubbles
+bool CChat::LineHighlighted(int ClientId, const char *pLine)
+{
+	bool Highlighted = false;
+
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	{
+		if(ClientId >= 0 && ClientId != GameClient()->m_aLocalIds[0] && ClientId != GameClient()->m_aLocalIds[1])
+		{
+			for(int LocalId : GameClient()->m_aLocalIds)
+			{
+				Highlighted |= LocalId >= 0 && LineShouldHighlight(pLine, GameClient()->m_aClients[LocalId].m_aName);
+			}
+		}
+	}
+	else
+	{
+		// on demo playback use local id from snap directly,
+		// since m_aLocalIds isn't valid there
+		Highlighted |= GameClient()->m_Snap.m_LocalClientId >= 0 && LineShouldHighlight(pLine, GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_aName);
+	}
+
+	return Highlighted;
+}
+

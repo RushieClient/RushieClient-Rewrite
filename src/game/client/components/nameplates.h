@@ -23,6 +23,9 @@ public:
 	void OnRender() override;
 	CNamePlates();
 	~CNamePlates() override;
+
+	// RClient chat bubbles
+	float GetNamePlateOffset(int ClientId) const;
 };
 
 #endif

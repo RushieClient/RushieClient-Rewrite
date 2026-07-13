@@ -834,6 +834,7 @@ public:
 		HTotal += LineSize.y;
 		return vec2(WMax, HTotal);
 	}
+	bool IsInited() const { return m_Inited; }
 };
 
 class CNamePlates::CNamePlatesData
@@ -1130,4 +1131,17 @@ CNamePlates::CNamePlates() :
 CNamePlates::~CNamePlates()
 {
 	delete m_pData;
+}
+
+// RClient Chat bubbles
+float CNamePlates::GetNamePlateOffset(int ClientId) const
+{
+	if(!m_pData || ClientId < 0 || ClientId >= MAX_CLIENTS)
+		return 0.0f;
+
+	const CNamePlate &NamePlate = m_pData->m_aNamePlates[ClientId];
+	if(!NamePlate.IsInited())
+		return 0.0f;
+
+	return NamePlate.Size().y;
 }

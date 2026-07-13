@@ -23,8 +23,6 @@ class CRClient : public CComponent
 	void ResetRclientDDstatsProfile();
 	char m_DDstatsSearchNickname[32];
 	int m_DDstatsSearchType = 0; //1-FindPlayer 2-FindSkin 3-CopySkin
-	void ApplySkinToPlayer(const char *Skin, const int CustomColor, const int SkinColorBodyint, const int SkinColorFeetint);
-	void ApplyColorToPlayer(const int CustomColor, const int SkinColorBodyint, const int SkinColorFeetint);
 	char PlayerSkinBeforeCopyPlayer[42];
 	int PlayerUseCustomColorBeforeCopyPlayer = 0;
 	int PlayerBodyColorBeforeCopyPlayer = 0;
@@ -68,6 +66,9 @@ class CRClient : public CComponent
 	};
 	std::vector<SCensorListCache> m_CensorMessageListCache;
 
+	// FindHours
+	static void ConPlayerFindHours(IConsole::IResult *pResult, void *pUserData);
+	bool FindHoursWriteInChat = false;
 public:
 	CRClient();
 	int Sizeof() const override { return sizeof(*this); }
@@ -87,6 +88,8 @@ public:
 	};
 	std::vector<SPlayerList> m_vPlayersInTracker;
 	void TrackerClientIdRemove(int ClientId);
+	void TrackerClientIdAdd(int ClientId);
+	bool TrackerIsTracked(int ClientId);
 
 	//Binds
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
@@ -119,6 +122,22 @@ public:
 	bool NeedUpdate();
 	bool m_FetchedRClientInfo = false;
 	char m_aVersionStr[10] = "0";
+
+	// Warlist
+	bool IsInWarlist(int ClientId, int Index);
+
+	// Copy Skin
+	void ApplySkinToPlayer(const char *Skin, const int CustomColor, const int SkinColorBodyint, const int SkinColorFeetint);
+	void ApplyColorToPlayer(const int CustomColor, const int SkinColorBodyint, const int SkinColorFeetint);
+
+	// Find Hours
+	std::shared_ptr<CHttpRequest> m_pRClientDDstatsTaskFindHours = nullptr;
+	void FetchRclientDDstatsFindHours(const char *PlayerNickname, const char *WriteInChat);
+	void FinishRclientDDstatsFindHours();
+	void ResetRclientDDstatsFindHours();
+
+	// Scoreboard
+	float GetScoreboardHeight(bool IsDefaultRender ,bool IsBigger, int ClientId = -1);
 };
 
 #endif //GAME_CLIENT_COMPONENTS_RCLIENT_RCLIENT_H

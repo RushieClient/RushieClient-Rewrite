@@ -42,6 +42,12 @@ void CRClient::OnRender()
 			ResetRClientInfoTask();
 		}
 	}
+
+	if(m_pRClientDDstatsTaskFindHours && m_pRClientDDstatsTaskFindHours->State() == EHttpState::DONE)
+	{
+		FinishRclientDDstatsFindHours();
+		ResetRclientDDstatsFindHours();
+	}
 }
 
 void CRClient::OnConsoleInit()
@@ -64,6 +70,7 @@ void CRClient::OnConsoleInit()
 	Console()->Register("rc_message_filter_add_word", "s[word]", CFGFLAG_CLIENT, ConAddCensorWord, this, "Add word to censor list");
 	Console()->Register("rc_message_filter_remove_word", "s[word]", CFGFLAG_CLIENT, ConRemoveCensorWord, this, "Remove word from censor list");
 	Console()->Register("rc_message_filter_print_words", "", CFGFLAG_CLIENT, ConPrintCensorList, this, "Print censor list");
+	Console()->Register("rc_find_hours", "r[player]", CFGFLAG_CLIENT, ConPlayerFindHours, this, "Find hours");
 	Console()->Chain(
 		"rc_message_filter_mode", [](IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData) {
 			((CRClient *)pUserData)->m_CensorMessageListCache.clear();
@@ -578,14 +585,13 @@ void CRClient::ConTrackerAdd(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 	const CGameClient::CClientData &ClientData = pThis->GameClient()->m_aClients[ClientId];
-	if(ClientData.m_aName[0] && ClientData.ClientId())
+	if(ClientData.m_aName[0] && ClientId >= 0 && ClientId < MAX_CLIENTS)
 	{
 		FastPrint(pThis->GameClient(), "Tracker", "Added player: %s", ClientData.m_aName);
 		FastEcho(pThis->GameClient(), "[[green]]Tracker: Added player: %s", ClientData.m_aName);
 		pThis->m_vPlayersInTracker.push_back({ClientData.ClientId(), ClientData.m_aName});
 	}
 }
-
 void CRClient::ConTrackerRemove(IConsole::IResult *pResult, void *pUserData)
 {
 	CRClient *pThis = static_cast<CRClient *>(pUserData);
@@ -597,7 +603,7 @@ void CRClient::ConTrackerRemove(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 	const CGameClient::CClientData &ClientData = pThis->GameClient()->m_aClients[ClientId];
-	if(ClientData.m_aName[0] && ClientData.ClientId())
+	if(ClientData.m_aName[0] && ClientId >= 0 && ClientId < MAX_CLIENTS)
 	{
 		for(size_t i = 0; i < pThis->m_vPlayersInTracker.size(); i++)
 		{
@@ -613,7 +619,6 @@ void CRClient::ConTrackerRemove(IConsole::IResult *pResult, void *pUserData)
 		pThis->GameClient()->Echo("Player not in tracker");
 	}
 }
-
 void CRClient::ConTrackerReset(IConsole::IResult *pResult, void *pUserData)
 {
 	CRClient *pThis = static_cast<CRClient *>(pUserData);
@@ -636,6 +641,27 @@ void CRClient::TrackerClientIdRemove(int ClientId)
 			m_vPlayersInTracker.erase(m_vPlayersInTracker.begin() + i);
 			return;
 		}
+	}
+}
+bool CRClient::TrackerIsTracked(int ClientId)
+{
+	for(size_t i = 0; i < m_vPlayersInTracker.size(); i++)
+	{
+		if(ClientId == m_vPlayersInTracker[i].m_ClientId)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+void CRClient::TrackerClientIdAdd(int ClientId)
+{
+	const CGameClient::CClientData &ClientData = GameClient()->m_aClients[ClientId];
+	if(ClientData.m_aName[0] && ClientId >= 0 && ClientId < MAX_CLIENTS)
+	{
+		FastPrint(GameClient(), "Tracker", "Added player: %s", ClientData.m_aName);
+		FastEcho(GameClient(), "[[green]]Tracker: Added player: %s", ClientData.m_aName);
+		m_vPlayersInTracker.push_back({ClientData.ClientId(), ClientData.m_aName});
 	}
 }
 
@@ -1157,4 +1183,138 @@ void CRClient::DoTranslateWork(CTranslateResponse &TranslatedClass, CLineTransla
 		GameClient()->m_Chat.SendChat(LineForTranslate.m_JobIntVariable, TranslatedClass.m_Text, true);
 	}
 
+}
+
+// WarList
+bool CRClient::IsInWarlist(int ClientId, int Index)
+{
+	CWarDataCache &WarData = GameClient()->m_WarList.m_WarPlayers[ClientId];
+	for(int i = 0; i < WarData.m_WarGroupMatches.size(); i++)
+	{
+		if(WarData.m_WarGroupMatches[i])
+		{
+			if(Index == i)
+				return true;
+		}
+	}
+	return false;
+}
+
+// FindHours
+void CRClient::ConPlayerFindHours(IConsole::IResult *pResult, void *pUserData)
+{
+	CRClient *pSelf = static_cast<CRClient *>(pUserData);
+	pSelf->FetchRclientDDstatsFindHours(TrimRight(pResult->GetString(0)).c_str(), pResult->GetString(1));
+}
+
+void CRClient::FetchRclientDDstatsFindHours(const char *PlayerNickname, const char *WriteInChat)
+{
+	if(m_pRClientDDstatsTaskFindHours && !m_pRClientDDstatsTaskFindHours->Done())
+		return;
+	char aUrl[256];
+	char Nickname[256];
+	EscapeUrl(Nickname, sizeof(Nickname), PlayerNickname);
+	if(!str_find_nocase("w", WriteInChat))
+		FindHoursWriteInChat = true;
+	else
+		FindHoursWriteInChat = false;
+	str_format(aUrl, sizeof(aUrl), "https://ddstats.tw/player/json?player=%s", Nickname);
+	m_pRClientDDstatsTaskFindHours = HttpGet(aUrl);
+	m_pRClientDDstatsTaskFindHours->Timeout(CTimeout{10000, 0, 500, 10});
+	m_pRClientDDstatsTaskFindHours->IpResolve(IPRESOLVE::V4);
+	Http()->Run(m_pRClientDDstatsTaskFindHours);
+}
+
+void CRClient::FinishRclientDDstatsFindHours()
+{
+	json_value *pJson = m_pRClientDDstatsTaskFindHours->ResultJson();
+	if(!pJson)
+		return;
+	const json_value Json = *pJson;
+	const json_value *General = json_object_get(&Json, "general_activity");
+	const json_value *Profile = json_object_get(&Json, "profile");
+	if(General->type == json_object && Profile->type == json_object)
+	{
+		const json_value *Seconds = json_object_get(General, "total_seconds_played");
+		const json_value *Points = json_object_get(Profile, "points");
+		const json_value *NicknameJson = json_object_get(Profile, "name");
+		if(Seconds->type == json_integer && Points->type == json_integer && NicknameJson->type == json_string)
+		{
+			int Hours = Seconds->u.integer / 3600;
+			int PointsFinal = Points->u.integer;
+			const char *Nickname = NicknameJson->u.string.ptr;
+			char aBuf[128];
+			str_format(aBuf, sizeof(aBuf), "Player %s has %d hours and %d points", Nickname, Hours, PointsFinal);
+			GameClient()->Echo(aBuf);
+			if(FindHoursWriteInChat)
+				GameClient()->m_Chat.SendChat(0, aBuf);
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "FindHours", aBuf);
+		}
+		else
+		{
+			GameClient()->Echo("Invalid 'total_seconds_played' in JSON");
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "FindHours", "Invalid 'total_seconds_played' in JSON");
+		}
+	}
+	else
+	{
+		GameClient()->Echo("Invalid 'general_activity' in JSON");
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "FindHours", "Invalid 'general_activity' in JSON");
+	}
+	json_value_free(pJson);
+}
+
+void CRClient::ResetRclientDDstatsFindHours()
+{
+	if(m_pRClientDDstatsTaskFindHours)
+	{
+		m_pRClientDDstatsTaskFindHours->Abort();
+		m_pRClientDDstatsTaskFindHours = NULL;
+	}
+}
+
+// Scoreboard
+float CRClient::GetScoreboardHeight(bool IsDefaultRender ,bool IsBigger, int ClientId)
+{
+	// Default: m_ScoreboardPopupContext.m_IsLocal ? 30.0f : 60.0f
+	// Default: m_ScoreboardPopupContext.m_IsLocal ? 58.5f : 87.5f
+	constexpr float OuterPopupPadding = 2.0f * (1.0f + 4.0f); // popup border + margin on both sides
+	constexpr float InnerMargin = 10.0f; // View.Margin(5.0f) inside PopupScoreboard
+	constexpr float LabelHeight = 12.0f;
+	constexpr float ItemSpacing = 2.0f;
+	constexpr float ButtonHeight = 17.5f;
+	constexpr float QuickActionHeight = 25.0f + ItemSpacing * 2.0f; // height of one quick-action row including spacing
+
+	const int LocalId = GameClient()->m_aLocalIds[g_Config.m_ClDummy];
+	const int LocalTeam = GameClient()->m_Teams.Team(LocalId);
+	const int TargetTeam = GameClient()->m_Teams.Team(ClientId);
+	const bool LocalInTeam = LocalTeam != TEAM_FLOCK && LocalTeam != TEAM_SUPER;
+	const bool TargetInTeam = TargetTeam != TEAM_FLOCK && TargetTeam != TEAM_SUPER;
+	const bool LocalIsTarget = LocalId == ClientId;
+	int ExtraButtonRows = 0;
+	if(LocalInTeam && LocalTeam == TargetTeam)
+		ExtraButtonRows++; // Exit
+	if(TargetInTeam && LocalTeam != TargetTeam)
+		ExtraButtonRows++; // Join
+	if(LocalInTeam && TargetTeam != LocalTeam)
+		ExtraButtonRows++; // Invite
+	if(!LocalIsTarget && LocalInTeam && TargetTeam == LocalTeam)
+		ExtraButtonRows++; // Kick
+	if(LocalInTeam && LocalTeam == TargetTeam)
+		ExtraButtonRows++; // Lock
+
+	// Both popup entry points currently render the same stack of buttons.
+	const int ButtonRows = (IsDefaultRender ? 8 : 7) + ExtraButtonRows;
+
+	float ScoreboardHeight = OuterPopupPadding + InnerMargin + LabelHeight;
+	if(IsBigger)
+	{
+		ScoreboardHeight += QuickActionHeight * 2.0f; // friend/mute/emote + tracker/team/war
+	}
+	ScoreboardHeight += ButtonRows * (ButtonHeight + ItemSpacing * 2.0f);
+
+	if (ExtraButtonRows != 0)
+		ScoreboardHeight += ItemSpacing * 4.0f;
+
+	return ScoreboardHeight;
 }

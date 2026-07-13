@@ -1193,7 +1193,7 @@ bool CRClient::IsInWarlist(int ClientId, int Index)
 	{
 		if(WarData.m_WarGroupMatches[i])
 		{
-			if(Index == i)
+			if(Index == (int)i)
 				return true;
 		}
 	}

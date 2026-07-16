@@ -174,6 +174,7 @@ void CGameClient::OnConsoleInit()
 					      &m_ImportantAlert,
 					      &m_DebugHud,
 					      &m_TouchControls,
+					      &m_EdgeHelper, //RClient
 					      &m_Scoreboard,
 					      &m_Statboard,
 					      &m_Motd,

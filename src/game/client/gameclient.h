@@ -69,6 +69,7 @@
 //RClient
 #include "components/rclient/rclient.h"
 #include "components/entity/chat_bubbles.h"
+#include "components/rclient/edgehelper.h"
 
 //TClient
 #include "components/tclient/bg_draw.h"
@@ -224,6 +225,7 @@ public:
 	// RClient
 	CRClient m_RClient;
 	CChatBubbles m_ChatBubbles;
+	CEdgeHelper m_EdgeHelper;
 
 	// TClient Components
 	CSkinProfiles m_SkinProfiles;

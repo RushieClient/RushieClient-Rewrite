@@ -2609,6 +2609,8 @@ if(CLIENT)
     components/players.h
     components/race_demo.cpp
     components/race_demo.h
+    components/rclient/edgehelper.cpp
+    components/rclient/edgehelper.h
     components/rclient/rclient.cpp
     components/rclient/rclient.h
     components/scoreboard.cpp

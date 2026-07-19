@@ -138,6 +138,9 @@ public:
 
 	// Scoreboard
 	float GetScoreboardHeight(bool IsDefaultRender ,bool IsBigger, int ClientId = -1);
+
+	// Hud
+	int GetCheckpointId();
 };
 
 #endif //GAME_CLIENT_COMPONENTS_RCLIENT_RCLIENT_H

@@ -1615,8 +1615,9 @@ inline float CHud::GetMovementInformationBoxHeight()
 		if(g_Config.m_ClShowhudPlayerPosition && g_Config.m_TcShowhudDummyPosition && Client()->DummyConnected()) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT * 2.0f;
 		if(g_Config.m_ClShowhudPlayerSpeed) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT * 3.0f;
 		if(g_Config.m_ClShowhudPlayerSpeed && g_Config.m_TcShowhudDummySpeed && Client()->DummyConnected()) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT * 2.0f;
-		if(g_Config.m_ClShowhudPlayerAngle) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT * 2.0f;
+		if(g_Config.m_ClShowhudPlayerAngle) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT * (g_Config.m_RcShowhudSmallerHud ? 1.0f : 2.0f);
 		if(g_Config.m_ClShowhudPlayerAngle && g_Config.m_TcShowhudDummyAngle && Client()->DummyConnected()) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT;
+		if(g_Config.m_RcShowhudPlayerCheckpoint) BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT * (g_Config.m_RcShowhudSmallerHud ? 1.0f : 2.0f);
 	}
 	if(BoxHeight > 0.0f)
 		BoxHeight += 2.0f;
@@ -1726,7 +1727,7 @@ void CHud::RenderMovementInformation()
 	const CMovementInformation Info = GetMovementInformation(ClientId, g_Config.m_ClDummy);
 	CMovementInformation DummyInfo{};
 	if(ShowDummyInfo)
-		DummyInfo = GetMovementInformation(GameClient()->m_aLocalIds[!g_Config.m_ClDummy], !g_Config.m_ClDummy);
+		DummyInfo = GetMovementInformation(GameClient()->m_aLocalIds[!g_Config.m_ClDummy], g_Config.m_ClDummy);
 	bool IsPositionGreen = false;
 	if(Info.m_Pos.x == DummyInfo.m_Pos.x)
 		IsPositionGreen = true;
@@ -1844,7 +1845,8 @@ void CHud::RenderMovementInformation()
 	if(g_Config.m_ClShowhudPlayerAngle)
 	{
 		TextRender()->Text(LeftX, y, Fontsize, Localize("Angle:"), -1.0f);
-		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+		if(!g_Config.m_RcShowhudSmallerHud)
+			y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
 		UpdateMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, Fontsize, Info.m_Angle, m_PlayerPrevAngle);
 		RenderMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, TextRender()->DefaultTextColor(), RightX, y);
@@ -1857,6 +1859,24 @@ void CHud::RenderMovementInformation()
 
 			TextRender()->Text(LeftX, y, Fontsize, "DA:", -1.0f);
 			str_format(aBuf, sizeof(aBuf), "%.2f", std::round(DummyInfo.m_Angle * 100.0f) / 100.0f);
+			TextRender()->Text(RightX - TextRender()->TextWidth(Fontsize, aBuf), y, Fontsize, aBuf, -1.0f);
+			y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+		}
+	}
+
+	if(g_Config.m_RcShowhudPlayerCheckpoint)
+	{
+		TextRender()->Text(LeftX, y, Fontsize, Localize("Checkpoint:"), -1.0f);
+		if(!g_Config.m_RcShowhudSmallerHud)
+			y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+
+		int CheckpointId = GameClient()->m_RClient.GetCheckpointId();
+		if(CheckpointId == -1)
+			TextRender()->Text(RightX - TextRender()->TextWidth(Fontsize, "No Info"), y, Fontsize, "No Info", -1.0f);
+		else
+		{
+			char aBuf[32];
+			str_format(aBuf, sizeof(aBuf), "%i", CheckpointId);
 			TextRender()->Text(RightX - TextRender()->TextWidth(Fontsize, aBuf), y, Fontsize, aBuf, -1.0f);
 		}
 	}

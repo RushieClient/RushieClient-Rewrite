@@ -451,6 +451,8 @@ void CServerBrowser::Filter()
 			Filtered = true;
 		else if(g_Config.m_BrFilterLogin && Info.m_RequiresLogin)
 			Filtered = true;
+		else if(g_Config.m_RcFilterOnlyEmptyServers && Info.m_NumFilteredPlayers != 0)
+			Filtered = true;
 		else
 		{
 			if(!Communities().empty())
@@ -627,6 +629,7 @@ int CServerBrowser::SortHash() const
 	i |= g_Config.m_BrFilterCountry << 14;
 	i |= g_Config.m_BrFilterConnectingPlayers << 15;
 	i |= g_Config.m_BrFilterLogin << 16;
+	i |= g_Config.m_RcFilterOnlyEmptyServers << 17;
 	return i;
 }
 

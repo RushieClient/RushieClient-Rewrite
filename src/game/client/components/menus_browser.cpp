@@ -729,6 +729,10 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 	View.HSplitBottom(3.0f, &View, nullptr);
 
 	View.HSplitTop(RowHeight, &Button, &View);
+	if(DoButton_CheckBox(&g_Config.m_RcFilterOnlyEmptyServers, Localize("No people playing"), g_Config.m_RcFilterOnlyEmptyServers, &Button))
+		g_Config.m_RcFilterOnlyEmptyServers ^= 1;
+
+	View.HSplitTop(RowHeight, &Button, &View);
 	if(DoButton_CheckBox(&g_Config.m_BrFilterEmpty, Localize("Has people playing"), g_Config.m_BrFilterEmpty, &Button))
 		g_Config.m_BrFilterEmpty ^= 1;
 
@@ -890,6 +894,7 @@ void CMenus::ResetServerbrowserFilters()
 	g_Config.m_BrFilterConnectingPlayers = 1;
 	g_Config.m_BrFilterServerAddress[0] = '\0';
 	g_Config.m_BrFilterLogin = false; // TClient
+	g_Config.m_RcFilterOnlyEmptyServers = 0;
 
 	if(g_Config.m_UiPage != PAGE_LAN)
 	{

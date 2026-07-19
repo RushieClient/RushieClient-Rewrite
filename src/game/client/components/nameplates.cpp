@@ -51,6 +51,9 @@ public:
 	bool m_ShowHookStrongWeakId;
 	int m_HookStrongWeakId;
 	float m_FontSizeHookStrongWeak;
+	// RClient
+	bool m_ShowHookDetection;
+	float m_FontSizeHookDetection;
 };
 
 // Part Types
@@ -686,6 +689,29 @@ public:
 		CNamePlatePartText(This) {}
 };
 
+// ***** RClient Parts *****
+class CNamePlatePartHookDetection : public CNamePlatePartIcon
+{
+protected:
+	void Update(CGameClient &This, const CNamePlateData &Data) override
+	{
+		m_Visible = Data.m_ShowHookDetection;
+		m_ShiftOnInvis = g_Config.m_RcNamePlatesHook && g_Config.m_RcNamePlatesShiftOnInvis;
+		if(!m_Visible)
+			return;
+		m_Size = vec2(Data.m_FontSizeHookDetection + DEFAULT_PADDING, Data.m_FontSizeHookDetection + DEFAULT_PADDING);
+		m_Color.a = Data.m_Color.a;
+	}
+
+public:
+	CNamePlatePartHookDetection(CGameClient &This) :
+		CNamePlatePartIcon(This)
+	{
+		m_Texture = g_pData->m_aImages[IMAGE_RCHOOK].m_Id;
+		m_Padding = vec2(0.0f, 0.0f);
+	}
+};
+
 // ***** Name Plates *****
 
 class CNamePlate
@@ -733,6 +759,9 @@ private:
 
 		AddPart<CNamePlatePartClan>(This);
 		AddPart<CNamePlatePartNewLine>(This);
+
+		AddPart<CNamePlatePartHookDetection>(This); // RClient
+		AddPart<CNamePlatePartNewLine>(This); // RClient
 
 		AddPart<CNamePlatePartReason>(This); // TClient
 		AddPart<CNamePlatePartNewLine>(This); // TClient
@@ -980,6 +1009,47 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 		}
 	}
 
+	// RClient
+	Data.m_FontSizeHookDetection = 18.0f + 20.0f * g_Config.m_RcNamePlatesHookSize / 100.0f;
+
+	int ShowHookDetection = g_Config.m_RcNamePlatesHook;
+	switch(ShowHookDetection)
+	{
+	case 0: // Off
+		Data.m_ShowHookDetection = false;
+		break;
+	case 1: // Others
+		Data.m_ShowHookDetection = !pPlayerInfo->m_Local;
+		break;
+	case 2: // Everyone
+		Data.m_ShowHookDetection = true;
+		break;
+	case 3: // Only self
+		Data.m_ShowHookDetection = pPlayerInfo->m_Local;
+		break;
+	default:
+		dbg_assert_failed("ShowDirectionConfig invalid");
+	}
+	if(Data.m_ShowHookDetection)
+	{
+		if(Client()->State() != IClient::STATE_DEMOPLAYBACK &&
+			pPlayerInfo->m_ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy])
+		{
+			const auto &InputData = GameClient()->m_Controls.m_aInputData[!g_Config.m_ClDummy];
+			Data.m_ShowHookDetection = InputData.m_Hook;
+		}
+		else if(Client()->State() != IClient::STATE_DEMOPLAYBACK && pPlayerInfo->m_Local) // Always render local input when not in demo playback
+		{
+			const auto &InputData = GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy];
+			Data.m_ShowHookDetection = InputData.m_Hook;
+		}
+		else
+		{
+			const auto &Character = GameClient()->m_Snap.m_aCharacters[pPlayerInfo->m_ClientId];
+			Data.m_ShowHookDetection = Character.m_Cur.m_HookState;
+		}
+	}
+
 	// TClient
 	if(g_Config.m_TcWarList && g_Config.m_TcWarListShowClan && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_WarClan)
 		Data.m_ShowClan = true;
@@ -998,6 +1068,8 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 
 	const float FontSizeDirection = 18.0f + 20.0f * g_Config.m_ClDirectionSize / 100.0f;
 	const float FontSizeHookStrongWeak = 18.0f + 20.0f * g_Config.m_ClNamePlatesStrongSize / 100.0f;
+
+	const float FontSizeHookDetection = 18.0f + 20.0f * g_Config.m_RcNamePlatesHookSize / 100.0f;
 
 	CNamePlateData Data;
 
@@ -1043,6 +1115,9 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 		Data.m_HookStrongWeakState = Data.m_HookStrongWeakId == 2 ? EHookStrongWeakState::STRONG : EHookStrongWeakState::WEAK;
 		Data.m_ShowHookStrongWeak = g_Config.m_ClNamePlatesStrong > 0;
 	}
+
+	// RClient
+	Data.m_FontSizeHookDetection = FontSizeHookDetection;
 
 	// TClient
 	Data.m_Local = false;

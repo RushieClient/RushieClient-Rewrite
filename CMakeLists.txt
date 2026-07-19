@@ -1651,13 +1651,13 @@ set(EXPECTED_DATA
   rclient/languages/index.txt
   rclient/languages/russian.txt
   rclient/menu_afk.png
+  rclient/rcactions.png
+  rclient/rchammer.png
+  rclient/rchook.png
   rclient/rclient_big_logo.png
   rclient/rclient_icon.png
   rclient/rclient_icon_red.png
   rclient/rclient_icon_white.png
-  rclient/riactions.png
-  rclient/rihammer.png
-  rclient/rihook.png
   rclient/spec_afk.png
   shader/pipeline.frag
   shader/pipeline.vert

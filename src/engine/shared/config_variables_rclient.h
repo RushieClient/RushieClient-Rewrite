@@ -62,3 +62,8 @@ MACRO_CONFIG_INT(RcEdgeInfoPosY, rc_edge_info_pos_y, 56, 0, 100, CFGFLAG_CLIENT 
 // Hud
 MACRO_CONFIG_INT(RcShowhudPlayerCheckpoint, rc_showhud_player_checkpoint, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show checkpoint in hud")
 MACRO_CONFIG_INT(RcShowhudSmallerHud, rc_showhud_smaller_hud, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "checkpoint and hud will be oneline")
+
+// Nameplates
+MACRO_CONFIG_INT(RcNamePlatesHook, rc_nameplates_hook, 0, 0, 3, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show hook detection in name plates (1 = other players', 2 = everyone, 3 = only your own")
+MACRO_CONFIG_INT(RcNamePlatesHookSize, rc_nameplates_hook_size, 30, -50, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Size of hook detection icons")
+MACRO_CONFIG_INT(RcNamePlatesShiftOnInvis, rc_nameplates_hook_shift_on_invis, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hook when not visible will still take up space")

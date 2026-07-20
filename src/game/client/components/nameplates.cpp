@@ -54,6 +54,8 @@ public:
 	// RClient
 	bool m_ShowHookDetection;
 	float m_FontSizeHookDetection;
+	bool m_ShowFireDetection;
+	float m_FontSizeFireDetection;
 };
 
 // Part Types
@@ -696,7 +698,7 @@ protected:
 	void Update(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_ShowHookDetection;
-		m_ShiftOnInvis = g_Config.m_RcNamePlatesHook && g_Config.m_RcNamePlatesShiftOnInvis;
+		m_ShiftOnInvis = g_Config.m_RcNamePlatesHook && g_Config.m_RcNamePlatesHookShiftOnInvis;
 		if(!m_Visible)
 			return;
 		m_Size = vec2(Data.m_FontSizeHookDetection + DEFAULT_PADDING, Data.m_FontSizeHookDetection + DEFAULT_PADDING);
@@ -708,6 +710,28 @@ public:
 		CNamePlatePartIcon(This)
 	{
 		m_Texture = g_pData->m_aImages[IMAGE_RCHOOK].m_Id;
+		m_Padding = vec2(0.0f, 0.0f);
+	}
+};
+
+class CNamePlatePartFireDetection : public CNamePlatePartIcon
+{
+protected:
+	void Update(CGameClient &This, const CNamePlateData &Data) override
+	{
+		m_Visible = Data.m_ShowFireDetection;
+		m_ShiftOnInvis = g_Config.m_RcNamePlatesFire && g_Config.m_RcNamePlatesFireShiftOnInvis;
+		if(!m_Visible)
+			return;
+		m_Size = vec2(Data.m_FontSizeFireDetection + DEFAULT_PADDING, Data.m_FontSizeFireDetection + DEFAULT_PADDING);
+		m_Color.a = Data.m_Color.a;
+	}
+
+public:
+	CNamePlatePartFireDetection(CGameClient &This) :
+		CNamePlatePartIcon(This)
+	{
+		m_Texture = g_pData->m_aImages[IMAGE_RCFIRE].m_Id;
 		m_Padding = vec2(0.0f, 0.0f);
 	}
 };
@@ -761,6 +785,7 @@ private:
 		AddPart<CNamePlatePartNewLine>(This);
 
 		AddPart<CNamePlatePartHookDetection>(This); // RClient
+		AddPart<CNamePlatePartFireDetection>(This); // RClient
 		AddPart<CNamePlatePartNewLine>(This); // RClient
 
 		AddPart<CNamePlatePartReason>(This); // TClient
@@ -1027,6 +1052,9 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	case 3: // Only self
 		Data.m_ShowHookDetection = pPlayerInfo->m_Local;
 		break;
+	case 4: // With dummy
+		Data.m_ShowFireDetection = pPlayerInfo->m_Local || pPlayerInfo->m_ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy];
+		break;
 	default:
 		dbg_assert_failed("ShowDirectionConfig invalid");
 	}
@@ -1050,6 +1078,49 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 		}
 	}
 
+	Data.m_FontSizeFireDetection = 18.0f + 20.0f * g_Config.m_RcNamePlatesFireSize / 100.0f;
+
+	int ShowFireDetection = g_Config.m_RcNamePlatesFire;
+	switch(ShowFireDetection)
+	{
+	case 0: // Off
+		Data.m_ShowFireDetection = false;
+		break;
+	case 1: // Others
+		Data.m_ShowFireDetection = !pPlayerInfo->m_Local;
+		break;
+	case 2: // Everyone
+		Data.m_ShowFireDetection = true;
+		break;
+	case 3: // Only self
+		Data.m_ShowFireDetection = pPlayerInfo->m_Local;
+		break;
+	case 4: // With dummy
+		Data.m_ShowFireDetection = pPlayerInfo->m_Local || pPlayerInfo->m_ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy];
+		break;
+	default:
+		dbg_assert_failed("ShowDirectionConfig invalid");
+	}
+	if(Data.m_ShowFireDetection)
+	{
+		if(Client()->State() != IClient::STATE_DEMOPLAYBACK &&
+			pPlayerInfo->m_ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy])
+		{
+			const auto &InputData = GameClient()->m_Controls.m_aInputData[!g_Config.m_ClDummy];
+			Data.m_ShowFireDetection = InputData.m_Fire & 1 || g_Config.m_ClDummyHammer || (g_Config.m_ClDummyFire && g_Config.m_ClDummyControl);
+		}
+		else if(Client()->State() != IClient::STATE_DEMOPLAYBACK && pPlayerInfo->m_Local) // Always render local input when not in demo playback
+		{
+			const auto &InputData = GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy];
+			Data.m_ShowFireDetection = InputData.m_Fire & 1;
+		}
+		else
+		{
+			const auto &Character = GameClient()->m_Snap.m_aCharacters[pPlayerInfo->m_ClientId];
+			Data.m_ShowFireDetection = (Client()->GameTick(g_Config.m_ClDummy) - Character.m_Cur.m_AttackTick) < (Client()->GameTickSpeed() / 5);
+		}
+	}
+
 	// TClient
 	if(g_Config.m_TcWarList && g_Config.m_TcWarListShowClan && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_WarClan)
 		Data.m_ShowClan = true;
@@ -1070,6 +1141,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 	const float FontSizeHookStrongWeak = 18.0f + 20.0f * g_Config.m_ClNamePlatesStrongSize / 100.0f;
 
 	const float FontSizeHookDetection = 18.0f + 20.0f * g_Config.m_RcNamePlatesHookSize / 100.0f;
+	const float FontSizeFireDetection = 18.0f + 20.0f * g_Config.m_RcNamePlatesFireSize / 100.0f;
 
 	CNamePlateData Data;
 
@@ -1118,6 +1190,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 
 	// RClient
 	Data.m_FontSizeHookDetection = FontSizeHookDetection;
+	Data.m_FontSizeFireDetection = FontSizeFireDetection;
 
 	// TClient
 	Data.m_Local = false;

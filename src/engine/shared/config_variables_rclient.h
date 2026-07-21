@@ -70,3 +70,6 @@ MACRO_CONFIG_INT(RcNamePlatesHookShiftOnInvis, rc_nameplates_hook_shift_on_invis
 MACRO_CONFIG_INT(RcNamePlatesFire, rc_nameplates_fire, 0, 0, 4, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show fire detection in name plates (1 = other players'(fake), 2 = everyone(fake), 3 = only your own, 4 = your and dummy")
 MACRO_CONFIG_INT(RcNamePlatesFireSize, rc_nameplates_fire_size, 30, -50, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Size of fire detection icons")
 MACRO_CONFIG_INT(RcNamePlatesFireShiftOnInvis, rc_nameplates_fire_shift_on_invis, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fire when not visible will still take up space")
+
+// Commands
+MACRO_CONFIG_INT(RcCommandsFixLayout, rc_commands_fix_layout, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "checkpoint and hud will be oneline")

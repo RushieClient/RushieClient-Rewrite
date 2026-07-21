@@ -330,7 +330,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		if(GameClient()->m_BindChat.ChatDoAutocomplete(ShiftPressed))
 		{
 		}
-		else if(m_aCompletionBuffer[0] == '/' && !m_vServerCommands.empty())
+		else if((m_aCompletionBuffer[0] == '/' || (g_Config.m_RcCommandsFixLayout ? m_aCompletionBuffer[0] == '.' : false)) && !m_vServerCommands.empty())
 		{
 			CCommand *pCompletionCommand = nullptr;
 
@@ -344,7 +344,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 
 			m_CompletionUsed = true;
 
-			const char *pCommandStart = m_aCompletionBuffer + 1;
+			const char *pCommandStart = (g_Config.m_RcCommandsFixLayout ? GameClient()->m_RClient.FixLayoutLine(m_aCompletionBuffer) : m_aCompletionBuffer) + 1;
 			for(size_t i = 0; i < 2 * NumCommands; ++i)
 			{
 				int SearchType;
@@ -1489,7 +1489,10 @@ void CChat::SendChat(int Team, const char *pLine, bool LineTranslated)
 	Msg.m_Team = Team;
 	if((str_startswith(pLine, ".") || str_startswith(pLine, "/")) || !g_Config.m_RcTranslateSend || LineTranslated)
 	{
-		Msg.m_pMessage = pLine;
+		if((str_startswith(pLine, ".") || str_startswith(pLine, "/")) && g_Config.m_RcCommandsFixLayout)
+			Msg.m_pMessage = GameClient()->m_RClient.FixLayoutLine(pLine);
+		else
+			Msg.m_pMessage = pLine;
 		Client()->SendPackMsgActive(&Msg, MSGFLAG_VITAL);
 	}
 	else

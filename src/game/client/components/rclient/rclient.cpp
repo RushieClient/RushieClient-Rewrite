@@ -9,6 +9,21 @@
 
 static constexpr const char *RCLIENT_INFO_URL = "https://server.rushie-client.ru/version";
 
+namespace ChatLayoutFix
+{
+	struct SChatLetter
+	{
+		const char *m_pWrongLetter;
+		char m_LetterEnglish;
+	};
+	// 0-russian
+	static const SChatLetter s_aLineLayout[] = {
+		{"й",'q'}, {"ц", 'w'}, {"у", 'e'}, {"к", 'r'}, {"е", 't'}, {"н", 'y'}, {"г", 'u'}, {"ш", 'i'}, {"щ", 'o'}, {"з", 'p'}, {"х", '['}, {"ъ", ']'},
+		{"ф",'a'}, {"ы", 's'}, {"в", 'd'}, {"а", 'f'}, {"п", 'g'}, {"р", 'h'}, {"о", 'j'}, {"л", 'k'}, {"д", 'l'}, {"ж", ';'}, {"э", '\''},
+		{"я",'z'}, {"ч", 'x'}, {"с", 'c'}, {"м", 'v'}, {"и", 'b'}, {"т", 'n'}, {"ь", 'm'}, {"б", ','}, {"ю", '.'}, {"ё", '`'}
+	};
+}
+
 CRClient::CRClient()
 {
 	CRClient::OnReset();
@@ -1339,4 +1354,42 @@ int CRClient::GetCheckpointId()
 	}
 
 	return -1;
+}
+
+const char *CRClient::FixLayoutLine(const char *Line)
+{
+	if(Line[0] != '/' && Line[0] != '.')
+		return Line;
+
+	int Length = 0;
+	std::string OutString;
+	const char *pIn = Line;
+
+	while(*pIn != '\0' && *pIn != ' ')
+	{
+		const ChatLayoutFix::SChatLetter *pKey = nullptr;
+		for(const ChatLayoutFix::SChatLetter &Key : ChatLayoutFix::s_aLineLayout)
+		{
+			if(str_utf8_comp_nocase_num(pIn, Key.m_pWrongLetter, str_length(Key.m_pWrongLetter)) == 0)
+			{
+				pKey = &Key;
+				break;
+			}
+		}
+
+		if(pKey == nullptr)
+		{
+			OutString += *pIn;
+			pIn++;
+		}
+		else
+		{
+			OutString += pKey->m_LetterEnglish;
+			pIn += str_length(pKey->m_pWrongLetter);
+		}
+	}
+
+	OutString += pIn;
+	str_copy(m_LineLayoutFix, OutString.c_str(), sizeof(m_LineLayoutFix));
+	return m_LineLayoutFix;
 }

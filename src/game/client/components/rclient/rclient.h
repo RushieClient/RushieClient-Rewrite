@@ -141,6 +141,10 @@ public:
 
 	// Hud
 	int GetCheckpointId();
+
+	// Chat Commands
+	const char *FixLayoutLine(const char *Line);
+	char m_LineLayoutFix[256];
 };
 
 #endif //GAME_CLIENT_COMPONENTS_RCLIENT_RCLIENT_H

@@ -1348,16 +1348,17 @@ void CChat::OnRender()
 		m_Input.SetScrollOffsetChange(ScrollOffsetChange);
 
 		// Autocompletion hint
-		if(m_Input.GetString()[0] == '/' && m_Input.GetString()[1] != '\0' && !m_vServerCommands.empty())
+		if((m_Input.GetString()[0] == '/' || (g_Config.m_RcCommandsFixLayout ? m_Input.GetString()[0] == '.' : false)) && m_Input.GetString()[1] != '\0' && !m_vServerCommands.empty())
 		{
+			const char *pCmdName = g_Config.m_RcCommandsFixLayout ? GameClient()->m_RClient.FixLayoutLine(m_Input.GetString()) + 1 : m_Input.GetString() + 1;
 			for(const auto &Command : m_vServerCommands)
 			{
-				if(str_startswith_nocase(Command.m_aName, m_Input.GetString() + 1))
+				if(str_startswith_nocase(Command.m_aName, pCmdName))
 				{
 					InputCursor.m_X = InputCursor.m_X + TextRender()->TextWidth(InputCursor.m_FontSize, m_Input.GetString(), -1, InputCursor.m_LineWidth);
 					InputCursor.m_Y = m_Input.GetCaretPosition().y;
 					TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.5f);
-					TextRender()->TextEx(&InputCursor, Command.m_aName + str_length(m_Input.GetString() + 1));
+					TextRender()->TextEx(&InputCursor, Command.m_aName + str_length(pCmdName));
 					TextRender()->TextColor(TextRender()->DefaultTextColor());
 					break;
 				}
@@ -1490,9 +1491,31 @@ void CChat::SendChat(int Team, const char *pLine, bool LineTranslated)
 	if((str_startswith(pLine, ".") || str_startswith(pLine, "/")) || !g_Config.m_RcTranslateSend || LineTranslated)
 	{
 		if((str_startswith(pLine, ".") || str_startswith(pLine, "/")) && g_Config.m_RcCommandsFixLayout)
-			Msg.m_pMessage = GameClient()->m_RClient.FixLayoutLine(pLine);
+		{
+			bool HaveCommand = false;
+			const char *OnlyCommand = GameClient()->m_RClient.FixLayoutLine(pLine) + 1;
+			if(!m_vServerCommands.empty())
+			{
+				for(size_t i = 0; i < m_vServerCommands.size(); i++)
+				{
+					if(str_startswith_nocase(OnlyCommand, m_vServerCommands[i].m_aName))
+					{
+						HaveCommand = true;
+						break;
+					}
+				}
+			}
+			if(HaveCommand)
+			{
+				char aBuf[256];
+				str_format(aBuf, sizeof(aBuf), "/%s", OnlyCommand);
+				Msg.m_pMessage = aBuf;
+			}
+			else
+				Msg.m_pMessage = pLine;
+	}
 		else
-			Msg.m_pMessage = pLine;
+		Msg.m_pMessage = pLine;
 		Client()->SendPackMsgActive(&Msg, MSGFLAG_VITAL);
 	}
 	else

@@ -1361,8 +1361,17 @@ const char *CRClient::FixLayoutLine(const char *Line)
 	if(Line[0] != '/' && Line[0] != '.')
 		return Line;
 
-	int Length = 0;
+	for(size_t i = 0; i < m_FixLayoutListCache.size(); i++)
+	{
+		if(!str_utf8_comp_nocase(Line, m_FixLayoutListCache[i].m_FirstMessage.c_str()))
+		{
+			str_copy(m_LineLayoutFix, m_FixLayoutListCache[i].m_FixedMessage.c_str());
+			return m_LineLayoutFix;
+		}
+	}
+
 	std::string OutString;
+	bool Changed = false;
 	const char *pIn = Line;
 
 	while(*pIn != '\0' && *pIn != ' ')
@@ -1386,10 +1395,17 @@ const char *CRClient::FixLayoutLine(const char *Line)
 		{
 			OutString += pKey->m_LetterEnglish;
 			pIn += str_length(pKey->m_pWrongLetter);
+			Changed = true;
 		}
 	}
 
 	OutString += pIn;
 	str_copy(m_LineLayoutFix, OutString.c_str(), sizeof(m_LineLayoutFix));
+	if(Changed)
+	{
+		m_FixLayoutListCache.push_back({Line, m_LineLayoutFix});
+		if(m_FixLayoutListCache.size() > 15)
+			m_FixLayoutListCache.erase(m_FixLayoutListCache.cbegin());
+	}
 	return m_LineLayoutFix;
 }

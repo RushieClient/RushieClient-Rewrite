@@ -145,6 +145,12 @@ public:
 	// Chat Commands
 	const char *FixLayoutLine(const char *Line);
 	char m_LineLayoutFix[256];
+	struct SFixLayoutListCache
+	{
+		std::string m_FirstMessage;
+		std::string m_FixedMessage;
+	};
+	std::vector<SFixLayoutListCache> m_FixLayoutListCache;
 };
 
 #endif //GAME_CLIENT_COMPONENTS_RCLIENT_RCLIENT_H

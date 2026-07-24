@@ -35,6 +35,7 @@ public:
 		CLineInput m_LineInput;
 	};
 	static std::vector<std::pair<const char *, std::vector<CBindDefault>>> BIND_DEFAULTS;
+	static std::vector<std::pair<const char *, std::vector<CBindDefault>>> BIND_DEFAULTS_RCLIENT;
 
 private:
 	static void ConAddBindchat(IConsole::IResult *pResult, void *pUserData);

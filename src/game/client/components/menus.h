@@ -61,6 +61,7 @@ public:
 
 private:
 	CUi::SColorPickerPopupContext m_ColorPickerPopupContext;
+	ColorHSLA DoButton_ColorPickerAutoVMargin(CButtonContainer *pResetId, const char *pText, unsigned int *pColorValue, ColorRGBA DefaultColor, CUIRect *pRect, float VMargin, bool Alpha = false, int *pCheckBoxValue = nullptr);
 	ColorHSLA DoLine_ColorPicker(CButtonContainer *pResetId, float LineSize, float LabelSize, float BottomMargin, CUIRect *pMainRect, const char *pText, unsigned int *pColorValue, ColorRGBA DefaultColor, bool CheckBoxSpacing = true, int *pCheckBoxValue = nullptr, bool Alpha = false);
 	ColorHSLA DoButton_ColorPicker(const CUIRect *pRect, unsigned int *pHslaColor, bool Alpha);
 
@@ -691,6 +692,7 @@ public:
 		SETTINGS_DDNET,
 		SETTINGS_ASSETS,
 		SETTINGS_TCLIENT,
+		SETTINGS_RCLIENT,
 		SETTINGS_PROFILES,
 		SETTINGS_CONFIGS,
 
@@ -842,6 +844,12 @@ private:
 	// found in menus_settings.cpp
 	void RenderSettingsDDNet(CUIRect MainView);
 	void RenderSettingsAppearance(CUIRect MainView);
+
+	// menus_rclient.cpp
+	void RenderSettingsRClient(CUIRect MainView);
+	void RenderSettingsRClientSettings(CUIRect MainView);
+	void RenderSettingsRClientChatBinds(CUIRect MainView);
+	void RenderSettingsRClientInfo(CUIRect MainView);
 
 	// found in menus_tclient.cpp
 	void RenderSettingsTClient(CUIRect MainView);

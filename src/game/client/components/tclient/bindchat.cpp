@@ -54,6 +54,29 @@ decltype(CBindChat::BIND_DEFAULTS) CBindChat::BIND_DEFAULTS = {
 				 }},
 };
 
+decltype(CBindChat::BIND_DEFAULTS_RCLIENT) CBindChat::BIND_DEFAULTS_RCLIENT = {
+	{TCLocalizable("Player Inspector"), {
+		{TCLocalizable("Find hours:"), {"!findhours", "rc_find_hours"}},
+		{TCLocalizable("Find Player:"), {"!findplayer", "rc_find_player"}},
+		{TCLocalizable("Find Skin:"), {"!findskin", "rc_find_skin"}},
+		{TCLocalizable("Copy Skin:"), {"!copyskin", "rc_copy_skin"}},
+		{TCLocalizable("Copy Color:"), {"!copycolor", "rc_copy_color"}},
+		{TCLocalizable("Backup Profile:"), {"!backupprofile", "rc_backup_player_profile"}},
+		{TCLocalizable("Find Player DDstats"), {"!findplayerddstats", "rc_find_player_from_ddstats"}},
+		{TCLocalizable("Find Skin DDstats"), {"!findskinddstats", "rc_find_skin_from_ddstats"}},
+		{TCLocalizable("Copy Skin DDstats"), {"!copyskinddstats", "rc_copy_skin_from_ddstats"}},
+	}},
+	{TCLocalizable("Message Filter"), {
+		{TCLocalizable("Add word in filter:"), {"!findhours", "rc_find_hours"}},
+		{TCLocalizable("Remove word from filter:"), {"!findplayer", "rc_find_player"}},
+		}},
+	{TCLocalizable("Tracker"), {
+		{TCLocalizable("Add Tracker:"), {"!trackeradd", "rc_tracker_add"}},
+		{TCLocalizable("Remove Tracker:"), {"!trackerrem", "rc_tracker_remove"}},
+		{TCLocalizable("Reset Tracker:"), {"!trackerreset", "rc_tracker_reset"}},
+	}},
+	};
+
 CBindChat::CBindChat()
 {
 	OnReset();
@@ -110,6 +133,10 @@ void CBindChat::ConBindchatDefaults(IConsole::IResult *pResult, void *pUserData)
 	CBindChat *pThis = static_cast<CBindChat *>(pUserData);
 
 	for(const auto &[_, vBindDefaults] : CBindChat::BIND_DEFAULTS)
+		for(const CBindChat::CBindDefault &BindDefault : vBindDefaults)
+			pThis->AddBind(BindDefault.m_Bind);
+
+	for(const auto &[_, vBindDefaults] : CBindChat::BIND_DEFAULTS_RCLIENT)
 		for(const CBindChat::CBindDefault &BindDefault : vBindDefaults)
 			pThis->AddBind(BindDefault.m_Bind);
 }
@@ -304,6 +331,9 @@ void CBindChat::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDa
 
 	std::vector<std::reference_wrapper<const CBindChat::CBind>> vDefaultBinds;
 	for(const auto &[_, vBindDefaults] : CBindChat::BIND_DEFAULTS)
+		for(const CBindChat::CBindDefault &BindDefault : vBindDefaults)
+			vDefaultBinds.emplace_back(BindDefault.m_Bind);
+	for(const auto &[_, vBindDefaults] : CBindChat::BIND_DEFAULTS_RCLIENT)
 		for(const CBindChat::CBindDefault &BindDefault : vBindDefaults)
 			vDefaultBinds.emplace_back(BindDefault.m_Bind);
 	std::sort(vDefaultBinds.begin(), vDefaultBinds.end(), Compare);

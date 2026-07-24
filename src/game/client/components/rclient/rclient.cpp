@@ -16,7 +16,7 @@ namespace ChatLayoutFix
 		const char *m_pWrongLetter;
 		char m_LetterEnglish;
 	};
-	// 0-russian
+	// 1-3 -- russian
 	static const SChatLetter s_aLineLayout[] = {
 		{"й",'q'}, {"ц", 'w'}, {"у", 'e'}, {"к", 'r'}, {"е", 't'}, {"н", 'y'}, {"г", 'u'}, {"ш", 'i'}, {"щ", 'o'}, {"з", 'p'}, {"х", '['}, {"ъ", ']'},
 		{"ф",'a'}, {"ы", 's'}, {"в", 'd'}, {"а", 'f'}, {"п", 'g'}, {"р", 'h'}, {"о", 'j'}, {"л", 'k'}, {"д", 'l'}, {"ж", ';'}, {"э", '\''},
@@ -85,13 +85,12 @@ void CRClient::OnConsoleInit()
 	Console()->Register("rc_message_filter_add_word", "s[word]", CFGFLAG_CLIENT, ConAddCensorWord, this, "Add word to censor list");
 	Console()->Register("rc_message_filter_remove_word", "s[word]", CFGFLAG_CLIENT, ConRemoveCensorWord, this, "Remove word from censor list");
 	Console()->Register("rc_message_filter_print_words", "", CFGFLAG_CLIENT, ConPrintCensorList, this, "Print censor list");
-	Console()->Register("rc_find_hours", "r[player]", CFGFLAG_CLIENT, ConPlayerFindHours, this, "Find hours");
-	Console()->Chain(
-		"rc_message_filter_mode", [](IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData) {
-			((CRClient *)pUserData)->m_CensorMessageListCache.clear();
-			pfnCallback(pResult, pCallbackUserData);
-		},
-		this);
+	Console()->Register("rc_find_hours", "s[player]", CFGFLAG_CLIENT, ConPlayerFindHours, this, "Find hours");
+	Console()->Chain("rc_message_filter_mode", ConchainResetCensorListCache, this);
+	Console()->Chain("rc_message_filter_multiply_change_word_on_full_match", ConchainResetCensorListCache, this);
+	Console()->Chain("rc_message_filter_word_on_full_match", ConchainResetCensorListCache, this);
+	Console()->Chain("rc_message_filter_multiply_change_word_on_partial_match", ConchainResetCensorListCache, this);
+	Console()->Chain("rc_message_filter_word_on_partial_match", ConchainResetCensorListCache, this);
 }
 
 void CRClient::OnMessage(int MsgType, void *pRawMsg)
@@ -890,6 +889,12 @@ void CRClient::ToggleDeepFly(bool Enable, const char *CurBind, bool NeedEcho)
 }
 
 // Message Filter
+void CRClient::ConchainResetCensorListCache(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	pfnCallback(pResult, pCallbackUserData);
+	((CRClient *)pUserData)->m_CensorMessageListCache.clear();
+}
+
 void CRClient::ConAddCensorWord(IConsole::IResult *pResult, void *pUserData)
 {
 	CRClient *pSelf = static_cast<CRClient *>(pUserData);
@@ -995,12 +1000,12 @@ const char *CRClient::FilterMessage(const char *Message, bool IsChat, int Client
 				BlockedMessage += "Server said ";
 			}
 			BlockedMessage += Message;
-			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str());
+			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str(), g_Config.m_RcMessageFilterPrintBlockedMessageColor);
 		}
 		if(CensorFoundInMessage)
 		{
 			m_CensorMessageListCache.push_back({Message, text});
-			if(m_CensorMessageListCache.size() > 15)
+			if(m_CensorMessageListCache.size() > 25)
 				m_CensorMessageListCache.erase(m_CensorMessageListCache.cbegin());
 		}
 		m_FilteredMessage = text;
@@ -1063,12 +1068,12 @@ const char *CRClient::FilterMessage(const char *Message, bool IsChat, int Client
 				BlockedMessage += "Server said ";
 			}
 			BlockedMessage += Message;
-			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str());
+			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str(), g_Config.m_RcMessageFilterPrintBlockedMessageColor);
 		}
 		if(CensorFoundInMessage)
 		{
 			m_CensorMessageListCache.push_back({Message, text});
-			if(m_CensorMessageListCache.size() > 15)
+			if(m_CensorMessageListCache.size() > 25)
 				m_CensorMessageListCache.erase(m_CensorMessageListCache.cbegin());
 		}
 		m_FilteredMessage = text;
@@ -1162,12 +1167,12 @@ const char *CRClient::FilterMessage(const char *Message, bool IsChat, int Client
 				BlockedMessage += "Server said ";
 			}
 			BlockedMessage += Message;
-			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str());
+			GameClient()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CensorList", BlockedMessage.c_str(), g_Config.m_RcMessageFilterPrintBlockedMessageColor);
 		}
 		if(CensorFoundInMessage)
 		{
 			m_CensorMessageListCache.push_back({Message, text});
-			if(m_CensorMessageListCache.size() > 15)
+			if(m_CensorMessageListCache.size() > 25)
 				m_CensorMessageListCache.erase(m_CensorMessageListCache.cbegin());
 		}
 		m_FilteredMessage = text;

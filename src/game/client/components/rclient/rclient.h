@@ -65,6 +65,7 @@ class CRClient : public CComponent
 		std::string m_FinalMessage;
 	};
 	std::vector<SCensorListCache> m_CensorMessageListCache;
+	static void ConchainResetCensorListCache(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	// FindHours
 	static void ConPlayerFindHours(IConsole::IResult *pResult, void *pUserData);

@@ -489,10 +489,11 @@ static const char *DEFAULT_SERVERLIST_URLS[] = {
 	"https://master2.ddnet.org/ddnet/15/servers.json",
 	"https://master3.ddnet.org/ddnet/15/servers.json",
 	"https://master4.ddnet.org/ddnet/15/servers.json",
-	"https://master.bestclient.fun/servers.json",
 	"https://server.rushie-client.ru/ddnet/15/servers.json",
+	"https://master.bestclient.fun/servers.json",
 };
 static constexpr int NUM_DEFAULT_SERVERLIST_URLS = 4;
+static constexpr int NUM_RUSHIE_SERVERLIST_URLS = 5;
 
 IServerBrowserHttp *CreateServerBrowserHttp(IEngine *pEngine, IStorage *pStorage, IHttp *pHttp, const char *pPreviousBestUrl)
 {
@@ -517,7 +518,7 @@ IServerBrowserHttp *CreateServerBrowserHttp(IEngine *pEngine, IStorage *pStorage
 	if(NumUrls == 0)
 	{
 		ppUrls = DEFAULT_SERVERLIST_URLS;
-		NumUrls = g_Config.m_RcUseMasterServerMirrors ? std::size(DEFAULT_SERVERLIST_URLS) : NUM_DEFAULT_SERVERLIST_URLS;
+		NumUrls = g_Config.m_RcUseRushieMasterServerMirrors ? g_Config.m_RcUseBestClientMasterServerMirrors ? std::size(DEFAULT_SERVERLIST_URLS) : NUM_RUSHIE_SERVERLIST_URLS : NUM_DEFAULT_SERVERLIST_URLS;
 	}
 	int PreviousBestIndex = -1;
 	for(int i = 0; i < NumUrls; i++)

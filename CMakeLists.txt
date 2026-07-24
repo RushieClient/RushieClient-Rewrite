@@ -2611,6 +2611,7 @@ if(CLIENT)
     components/race_demo.h
     components/rclient/edgehelper.cpp
     components/rclient/edgehelper.h
+    components/rclient/menus_rclient.cpp
     components/rclient/rclient.cpp
     components/rclient/rclient.h
     components/scoreboard.cpp

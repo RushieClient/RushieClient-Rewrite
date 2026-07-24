@@ -1446,7 +1446,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 	// render background
 	CUIRect Button, TabBar, RestartBar;
 	MainView.VSplitRight(120.0f, &MainView, &TabBar);
-	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
+	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_BL, 10.0f);
 	MainView.Margin(20.0f, &MainView);
 
 	const bool NeedRestart = m_NeedRestartGraphics || m_NeedRestartSound || m_NeedRestartUpdate;
@@ -1471,6 +1471,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 		Localize("DDNet"),
 		Localize("Assets"),
 		TCLocalize("TClient"),
+		Localize("RClient"),
 		Localize("Profiles"),
 		Localize("Configs")};
 
@@ -1542,14 +1543,19 @@ void CMenus::RenderSettings(CUIRect MainView)
 		GameClient()->m_MenuBackground.ChangePosition(13);
 		RenderSettingsTClient(MainView);
 	}
-	else if(g_Config.m_UiSettingsPage == SETTINGS_PROFILES)
+	else if(g_Config.m_UiSettingsPage == SETTINGS_RCLIENT)
 	{
 		GameClient()->m_MenuBackground.ChangePosition(14);
+		RenderSettingsRClient(MainView);
+	}
+	else if(g_Config.m_UiSettingsPage == SETTINGS_PROFILES)
+	{
+		GameClient()->m_MenuBackground.ChangePosition(15);
 		RenderSettingsTClientProfiles(MainView);
 	}
 	else if(g_Config.m_UiSettingsPage == SETTINGS_CONFIGS)
 	{
-		GameClient()->m_MenuBackground.ChangePosition(15);
+		GameClient()->m_MenuBackground.ChangePosition(16);
 		RenderSettingsTClientConfigs(MainView);
 	}
 	else

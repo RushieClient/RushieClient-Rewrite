@@ -1053,10 +1053,10 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 		Data.m_ShowHookDetection = pPlayerInfo->m_Local;
 		break;
 	case 4: // With dummy
-		Data.m_ShowFireDetection = pPlayerInfo->m_Local || pPlayerInfo->m_ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy];
+		Data.m_ShowHookDetection = pPlayerInfo->m_Local || pPlayerInfo->m_ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy];
 		break;
 	default:
-		dbg_assert_failed("ShowDirectionConfig invalid");
+		dbg_assert_failed("ShowHookDetectionConfig invalid");
 	}
 	if(Data.m_ShowHookDetection)
 	{
@@ -1064,7 +1064,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 			pPlayerInfo->m_ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy])
 		{
 			const auto &InputData = GameClient()->m_Controls.m_aInputData[!g_Config.m_ClDummy];
-			Data.m_ShowHookDetection = InputData.m_Hook;
+			Data.m_ShowHookDetection = InputData.m_Hook || (g_Config.m_ClDummyHook && g_Config.m_ClDummyControl);
 		}
 		else if(Client()->State() != IClient::STATE_DEMOPLAYBACK && pPlayerInfo->m_Local) // Always render local input when not in demo playback
 		{
@@ -1099,7 +1099,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 		Data.m_ShowFireDetection = pPlayerInfo->m_Local || pPlayerInfo->m_ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy];
 		break;
 	default:
-		dbg_assert_failed("ShowDirectionConfig invalid");
+		dbg_assert_failed("ShowFireDetectionConfig invalid");
 	}
 	if(Data.m_ShowFireDetection)
 	{

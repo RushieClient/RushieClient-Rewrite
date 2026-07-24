@@ -1749,8 +1749,7 @@ void CHud::RenderMovementInformation()
 		if(Info.m_Pos.x == TrackerInfo.m_Pos.x)
 			IsPositionGreen = true;
 		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), "%s's Position", GameClient()->m_RClient.m_vPlayersInTracker[i].m_Nickname.c_str());
-		TextRender()->Text(LeftX, y, Fontsize, aBuf, -1.0f);
+		TextRender()->Text(LeftX, y, Fontsize, GameClient()->m_RClient.m_vPlayersInTracker[i].m_Nickname.c_str(), -1.0f);
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 		TextRender()->Text(LeftX, y, Fontsize, "X:", -1.0f);
 		str_format(aBuf, sizeof(aBuf), "%.2f", std::round(TrackerInfo.m_Pos.x * 100.0f) / 100.0f);

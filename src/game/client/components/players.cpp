@@ -989,11 +989,11 @@ void CPlayers::RenderPlayer(
 	float TeeAnimScale, TeeBaseSize;
 	CRenderTools::GetRenderTeeAnimScaleAndBaseSize(&RenderInfo, TeeAnimScale, TeeBaseSize);
 	vec2 BodyPos = Position + vec2(State.GetBody()->m_X, State.GetBody()->m_Y) * TeeAnimScale;
-	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN)
+	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN && g_Config.m_RcHideFrozenFlakesEffect)
 	{
 		GameClient()->m_Effects.FreezingFlakes(BodyPos, vec2(32, 32), Alpha);
 	}
-	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_SPARKLE)
+	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_SPARKLE || (ClientId == GameClient()->m_Snap.m_LocalClientId && g_Config.m_RcShowSparkleEffect))
 	{
 		GameClient()->m_Effects.SparkleTrail(BodyPos, Alpha);
 	}
@@ -1021,6 +1021,49 @@ void CPlayers::RenderPlayer(
 		int QuadOffset = QuadOffsetToEmoticon + CurEmoticon;
 		Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
 		Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, Position.x + 24.f, Position.y - 40.f);
+
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		Graphics()->QuadsSetRotation(0);
+	}
+	
+	//RClient
+	if((Player.m_PlayerFlags & PLAYERFLAG_IN_MENU) && !GameClient()->m_aClients[ClientId].m_Afk && g_Config.m_RcShowAfkEmoteInMenu)
+	{
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
+
+		if(g_Config.m_RcShowAfkTextureInMenu)
+		{
+			Graphics()->TextureSet(m_RiMenuAfkTexture);
+			Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffsetToEmoticon, BodyPos.x, BodyPos.y);
+		}
+		else
+		{
+			int CurEmoticon = (SPRITE_ZZZ - SPRITE_OOP);
+			Graphics()->TextureSet(GameClient()->m_EmoticonsSkin.m_aSpriteEmoticons[CurEmoticon]);
+			int QuadOffset = QuadOffsetToEmoticon + CurEmoticon;
+			Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, Position.x + 24.f, Position.y - 40.f);
+		}
+
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		Graphics()->QuadsSetRotation(0);
+	}
+
+	if(!(Player.m_PlayerFlags & PLAYERFLAG_IN_MENU) && GameClient()->m_aClients[ClientId].m_Paused && !GameClient()->m_aClients[ClientId].m_Afk && g_Config.m_RcShowAfkEmoteInSpec)
+	{
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
+
+		if(g_Config.m_RcShowAfkTextureInSpec)
+		{
+			Graphics()->TextureSet(m_RiSpecAfkTexture);
+			Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffsetToEmoticon, BodyPos.x, BodyPos.y);
+		}
+		else
+		{
+			int CurEmoticon = (SPRITE_ZZZ - SPRITE_OOP);
+			Graphics()->TextureSet(GameClient()->m_EmoticonsSkin.m_aSpriteEmoticons[CurEmoticon]);
+			int QuadOffset = QuadOffsetToEmoticon + CurEmoticon;
+			Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, Position.x + 24.f, Position.y - 40.f);
+		}
 
 		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 		Graphics()->QuadsSetRotation(0);
@@ -1751,4 +1794,7 @@ void CPlayers::OnInit()
 
 	CreateNinjaTeeRenderInfo();
 	CreateSpectatorTeeRenderInfo();
+
+	m_RiMenuAfkTexture = Graphics()->LoadTexture("rclient/menu_afk.png", IStorage::TYPE_ALL);
+	m_RiSpecAfkTexture = Graphics()->LoadTexture("rclient/spec_afk.png", IStorage::TYPE_ALL);
 }

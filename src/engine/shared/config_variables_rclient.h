@@ -76,5 +76,13 @@ MACRO_CONFIG_INT(RcNamePlatesFireShiftOnInvis, rc_nameplates_fire_shift_on_invis
 // Commands
 MACRO_CONFIG_INT(RcCommandsFixLayout, rc_commands_fix_layout, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "checkpoint and hud will be oneline")
 
+// Players
+MACRO_CONFIG_INT(RcHideFrozenFlakesEffect, rc_hide_frozen_flakes_effect, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hide frozen flakes effect")
+MACRO_CONFIG_INT(RcShowSparkleEffect, rc_show_sparkle_effect, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Always show sparkle effect")
+MACRO_CONFIG_INT(RcShowAfkEmoteInMenu, rc_show_afk_emote_menu, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows afk emote when player in menu (only client)")
+MACRO_CONFIG_INT(RcShowAfkTextureInMenu, rc_show_afk_texture_in_menu, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows afk texture when player in menu (only client)")
+MACRO_CONFIG_INT(RcShowAfkEmoteInSpec, rc_show_afk_emote_spec, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows afk emote when player in spec (only client)")
+MACRO_CONFIG_INT(RcShowAfkTextureInSpec, rc_show_afk_texture_in_spec, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows spec texture when player in spec (only client)")
+
 // Menus flags
 MACRO_CONFIG_INT(RcRClientSettingsTabs, rc_rclient_settings_tabs, 0, 0, 65536, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable settings tabs")

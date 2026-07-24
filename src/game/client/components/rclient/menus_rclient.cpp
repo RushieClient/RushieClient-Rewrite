@@ -291,6 +291,33 @@ void CMenus::RenderSettingsRClientSettings(CUIRect MainView)
 	Column.HSplitTop(MarginExtraSmall, nullptr, &Column);
 	s_SectionBoxes.back().h = Column.y - s_SectionBoxes.back().y;
 
+	// ***** Players ***** //
+	Column.HSplitTop(MarginBetweenSections, nullptr, &Column);
+	s_SectionBoxes.push_back(Column);
+	Column.HSplitTop(HeadlineHeight, &Label, &Column);
+	Ui()->DoLabel(&Label, RCLocalize("Players"), HeadlineFontSize, TEXTALIGN_ML);
+	Column.HSplitTop(MarginSmall, nullptr, &Column);
+
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcHideFrozenFlakesEffect, RCLocalize("Hide frozen flakes"), &g_Config.m_RcHideFrozenFlakesEffect, &Column, LineSize);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcShowSparkleEffect, RCLocalize("Always show sparkles"), &g_Config.m_RcShowSparkleEffect, &Column, LineSize);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcShowAfkEmoteInMenu, RCLocalize("Show AFK emote in menu"), &g_Config.m_RcShowAfkEmoteInMenu, &Column, LineSize);
+	{
+		CUIRect RightSide;
+		Column.VSplitLeft(MarginBetweenViews, nullptr, &RightSide);
+		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcShowAfkTextureInMenu, TCLocalize("Show texture instead emote in menu"), &g_Config.m_RcShowAfkTextureInMenu, &RightSide, LineSize);
+		Column.HSplitTop(LineSize, nullptr, &Column);
+	}
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcShowAfkEmoteInSpec, RCLocalize("Show AFK emote in spec"), &g_Config.m_RcShowAfkEmoteInSpec, &Column, LineSize);
+	{
+		CUIRect RightSide;
+		Column.VSplitLeft(MarginBetweenViews, nullptr, &RightSide);
+		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcShowAfkTextureInSpec, TCLocalize("Show texture instead emote in spec"), &g_Config.m_RcShowAfkTextureInSpec, &RightSide, LineSize);
+		Column.HSplitTop(LineSize, nullptr, &Column);
+	}
+
+	Column.HSplitTop(MarginExtraSmall, nullptr, &Column);
+	s_SectionBoxes.back().h = Column.y - s_SectionBoxes.back().y;
+
 	// ***** RightView ***** //
 	LeftView = Column;
 	Column = RightView;
@@ -308,14 +335,14 @@ void CMenus::RenderSettingsRClientSettings(CUIRect MainView)
 	DoLine_KeyReader(Column, s_ReaderButtonDeepfly, s_ClearButtonDeepfly, TCLocalize("Toggle deepfly"), "rc_toggle_deepfly");
 	{
 		CUIRect RightSide;
-		Column.VSplitLeft(Margin, nullptr, &RightSide);
+		Column.VSplitLeft(MarginBetweenViews, nullptr, &RightSide);
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcDeepFlyOnRMB, TCLocalize("Deepfly on rmb"), &g_Config.m_RcDeepFlyOnRMB, &RightSide, LineSize);
 		Column.HSplitTop(LineSize, nullptr, &Column);
 	}
 	DoLine_KeyReader(Column, s_ReaderButton45degrees, s_ClearButton45degrees, TCLocalize("Toggle 45degrees"), "+rc_45_degrees");
 	{
 		CUIRect RightSide;
-		Column.VSplitLeft(Margin, nullptr, &RightSide);
+		Column.VSplitLeft(MarginBetweenViews, nullptr, &RightSide);
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcToggle45degrees, TCLocalize("Toggle 45 degrees"), &g_Config.m_RcToggle45degrees, &RightSide, LineSize);
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_Rc45degreesEcho, TCLocalize("Echo 45 degrees"), &g_Config.m_Rc45degreesEcho, &RightSide, LineSize);
 		Column.HSplitTop(LineSize * 2, nullptr, &Column);
@@ -323,7 +350,7 @@ void CMenus::RenderSettingsRClientSettings(CUIRect MainView)
 	DoLine_KeyReader(Column, s_ReaderButtonSmallsens, s_ClearButtonSmallsens, TCLocalize("Toggle smallsens"), "+rc_small_sens");
 	{
 		CUIRect RightSide;
-		Column.VSplitLeft(Margin, nullptr, &RightSide);
+		Column.VSplitLeft(MarginBetweenViews, nullptr, &RightSide);
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcToggleSmallSens, TCLocalize("Toggle small sens"), &g_Config.m_RcToggleSmallSens, &RightSide, LineSize);
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcSmallSensEcho, TCLocalize("Echo small sens"), &g_Config.m_RcSmallSensEcho, &RightSide, LineSize);
 		Column.HSplitTop(LineSize * 2, nullptr, &Column);

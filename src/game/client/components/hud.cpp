@@ -1027,6 +1027,10 @@ void CHud::PreparePlayerStateQuads()
 	m_DummyHammerOffset = Graphics()->QuadContainerAddSprite(m_HudQuadContainerIndex, 0.f, 0.f, 12.f, 12.f);
 	m_DummyCopyOffset = Graphics()->QuadContainerAddSprite(m_HudQuadContainerIndex, 0.f, 0.f, 12.f, 12.f);
 
+	// Quads for displaying advanced dummy actinos
+	m_DummyRememberOffset = Graphics()->QuadContainerAddSprite(m_HudQuadContainerIndex, 0.f, 0.f, 12.f, 12.f);
+	m_DummyControlOffset = Graphics()->QuadContainerAddSprite(m_HudQuadContainerIndex, 0.f, 0.f, 12.f, 12.f);
+
 	// Quads for displaying team modes
 	m_PracticeModeOffset = Graphics()->QuadContainerAddSprite(m_HudQuadContainerIndex, 0.f, 0.f, 12.f, 12.f);
 	m_LockModeOffset = Graphics()->QuadContainerAddSprite(m_HudQuadContainerIndex, 0.f, 0.f, 12.f, 12.f);
@@ -1536,7 +1540,7 @@ void CHud::RenderDummyActions()
 		return;
 	}
 	// render small dummy actions hud
-	const float BoxHeight = 29.0f;
+	const float BoxHeight = 13.0f * 2 + 3.0f + (g_Config.m_RcShowhudAdvancedDummyActions ? 13.0f * 2 : 0.0f); // 13.0f - icon, 3.0f - spacing(once)
 	const float BoxWidth = 16.0f;
 
 	float StartX = m_Width - BoxWidth;
@@ -1571,6 +1575,24 @@ void CHud::RenderDummyActions()
 	}
 	Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudDummyCopy);
 	Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_DummyCopyOffset, x, y);
+	if(!g_Config.m_RcShowhudAdvancedDummyActions)
+		return;
+	y += 13;
+	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.4f);
+	if(!g_Config.m_ClDummyResetOnSwitch)
+	{
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+	Graphics()->TextureSet(GameClient()->m_DumActionsSkin.m_SpriteDumRemember);
+	Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_DummyRememberOffset, x, y);
+	y += 13;
+	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.4f);
+	if(g_Config.m_ClDummyControl)
+	{
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+	Graphics()->TextureSet(GameClient()->m_DumActionsSkin.m_SpriteDumControl);
+	Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_DummyControlOffset, x, y);
 }
 
 inline int CHud::GetDigitsIndex(int Value, int Max)

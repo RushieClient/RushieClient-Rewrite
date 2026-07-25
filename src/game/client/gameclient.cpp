@@ -447,6 +447,8 @@ void CGameClient::OnInit()
 			LoadHudSkin(g_Config.m_ClAssetHud);
 		else if(i == IMAGE_EXTRAS)
 			LoadExtrasSkin(g_Config.m_ClAssetExtras);
+		else if(i == IMAGE_RCDUMACTIONS)
+			LoadDumActionsSkin("default");
 		else if(g_pData->m_aImages[i].m_pFilename[0] == '\0') // handle special null image without filename
 			g_pData->m_aImages[i].m_Id = IGraphics::CTextureHandle();
 		else
@@ -5037,6 +5039,50 @@ void CGameClient::LoadExtrasSkin(const char *pPath, bool AsDir)
 		m_ExtrasSkin.m_aSpriteParticles[3] = m_ExtrasSkin.m_SpriteHectagon;
 
 		m_ExtrasSkinLoaded = true;
+	}
+	ImgInfo.Free();
+}
+
+void CGameClient::LoadDumActionsSkin(const char *pPath, bool AsDir)
+{
+	if(m_DumActionSkinLoaded)
+	{
+		Graphics()->UnloadTexture(&m_DumActionsSkin.m_SpriteDumControl);
+		Graphics()->UnloadTexture(&m_DumActionsSkin.m_SpriteDumRemember);
+
+		m_DumActionSkinLoaded = false;
+	}
+
+	char aPath[IO_MAX_PATH_LENGTH];
+	bool IsDefault = false;
+	if(str_comp(pPath, "default") == 0)
+	{
+		str_copy(aPath, g_pData->m_aImages[IMAGE_RCDUMACTIONS].m_pFilename);
+		IsDefault = true;
+	}
+	else
+	{
+		if(AsDir)
+			str_format(aPath, sizeof(aPath), "assets/extras/%s/%s", pPath, g_pData->m_aImages[IMAGE_RCDUMACTIONS].m_pFilename);
+		else
+			str_format(aPath, sizeof(aPath), "assets/extras/%s.png", pPath);
+	}
+
+	CImageInfo ImgInfo;
+	bool PngLoaded = Graphics()->LoadPng(ImgInfo, aPath, IStorage::TYPE_ALL);
+	if(!PngLoaded && !IsDefault)
+	{
+		if(AsDir)
+			LoadDumActionsSkin("default");
+		else
+			LoadDumActionsSkin(pPath, true);
+	}
+	else if(PngLoaded && Graphics()->CheckImageDivisibility(aPath, ImgInfo, g_pData->m_aSprites[SPRITE_RC_DUMMY_ACTIONS_CONTROL].m_pSet->m_Gridx, g_pData->m_aSprites[SPRITE_RC_DUMMY_ACTIONS_CONTROL].m_pSet->m_Gridy, true) && Graphics()->IsImageFormatRgba(aPath, ImgInfo))
+	{
+		m_DumActionsSkin.m_SpriteDumControl = Graphics()->LoadSpriteTexture(ImgInfo, &g_pData->m_aSprites[SPRITE_RC_DUMMY_ACTIONS_CONTROL]);
+		m_DumActionsSkin.m_SpriteDumRemember = Graphics()->LoadSpriteTexture(ImgInfo, &g_pData->m_aSprites[SPRITE_RC_DUMMY_ACTIONS_REMEMBER]);
+
+		m_DumActionSkinLoaded = true;
 	}
 	ImgInfo.Free();
 }

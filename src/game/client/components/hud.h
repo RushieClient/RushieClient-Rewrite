@@ -166,6 +166,8 @@ private:
 	int m_LiveFrozenOffset;
 	int m_DummyHammerOffset;
 	int m_DummyCopyOffset;
+	int m_DummyRememberOffset;
+	int m_DummyControlOffset;
 	int m_PracticeModeOffset;
 	int m_Team0ModeOffset;
 	int m_LockModeOffset;

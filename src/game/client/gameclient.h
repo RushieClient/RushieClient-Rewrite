@@ -796,6 +796,7 @@ public:
 	void LoadParticlesSkin(const char *pPath, bool AsDir = false);
 	void LoadHudSkin(const char *pPath, bool AsDir = false);
 	void LoadExtrasSkin(const char *pPath, bool AsDir = false);
+	void LoadDumActionsSkin(const char *pPath, bool AsDir = false);
 
 	struct SClientGameSkin
 	{
@@ -959,6 +960,15 @@ public:
 
 	SClientExtrasSkin m_ExtrasSkin;
 	bool m_ExtrasSkinLoaded = false;
+
+	struct SClientDummyActionsSkin
+	{
+		IGraphics::CTextureHandle m_SpriteDumControl;
+		IGraphics::CTextureHandle m_SpriteDumRemember;
+	};
+
+	SClientDummyActionsSkin m_DumActionsSkin;
+	bool m_DumActionSkinLoaded = false;
 
 	const std::vector<CSnapEntities> &SnapEntities() { return m_vSnapEntities; }
 

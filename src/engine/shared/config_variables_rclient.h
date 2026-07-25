@@ -86,3 +86,10 @@ MACRO_CONFIG_INT(RcShowAfkTextureInSpec, rc_show_afk_texture_in_spec, 1, 0, 1, C
 
 // Menus flags
 MACRO_CONFIG_INT(RcRClientSettingsTabs, rc_rclient_settings_tabs, 0, 0, 65536, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable settings tabs")
+
+// Anti AFK
+MACRO_CONFIG_INT(RcPlayOnMoveNonInactive, rc_play_on_move_nonactive, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Play sound when someone moves u when u inactive")
+MACRO_CONFIG_INT(RcSoundOnMoveNonInactive, rc_sound_on_move_nonactive, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Choose sound when inactive (0-WakeUp, 1-Grenade boom, 2-msg tag")
+MACRO_CONFIG_INT(RcNotifyOnMoveInSpec, rc_notify_on_move_in_spec, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show when someone moves u when u spectate")
+MACRO_CONFIG_INT(RcPlayOnMoveInSpec, rc_play_on_move_in_spec, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Play sound when someone moves u when u spectate")
+MACRO_CONFIG_INT(RcSoundOnMoveInSpec, rc_sound_on_move_in_spec, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Choose sound when spectate (0-WakeUp, 1-Grenade boom, 2-msg tag")

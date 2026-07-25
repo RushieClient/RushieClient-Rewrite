@@ -70,6 +70,7 @@
 #include "components/rclient/rclient.h"
 #include "components/entity/chat_bubbles.h"
 #include "components/rclient/edgehelper.h"
+#include "components/rclient/notify_on_move.h"
 
 //TClient
 #include "components/tclient/bg_draw.h"
@@ -226,6 +227,7 @@ public:
 	CRClient m_RClient;
 	CChatBubbles m_ChatBubbles;
 	CEdgeHelper m_EdgeHelper;
+	CNotifyOnMove m_NotifyOnMove;
 
 	// TClient Components
 	CSkinProfiles m_SkinProfiles;

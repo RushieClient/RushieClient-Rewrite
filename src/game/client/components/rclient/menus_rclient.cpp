@@ -473,6 +473,37 @@ void CMenus::RenderSettingsRClientSettings(CUIRect MainView)
 	Column.HSplitTop(MarginExtraSmall, nullptr, &Column);
 	s_SectionBoxes.back().h = Column.y - s_SectionBoxes.back().y;
 
+	// ***** Anti AFK ***** //
+	Column.HSplitTop(MarginBetweenSections, nullptr, &Column);
+	s_SectionBoxes.push_back(Column);
+	Column.HSplitTop(HeadlineHeight, &Label, &Column);
+	Ui()->DoLabel(&Label, RCLocalize("Anti AFK"), HeadlineFontSize, TEXTALIGN_ML);
+	Column.HSplitTop(MarginSmall, nullptr, &Column);
+
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcPlayOnMoveNonInactive, RCLocalize("Play sound when moved and window non active"), &g_Config.m_RcPlayOnMoveNonInactive, &Column, LineSize);
+	static std::vector<CButtonContainer> s_vButtonContainersNonActive = {{}, {}, {}};
+	DoLine_RadioMenu(Column, TCLocalize("Choose sound non active"),
+		   s_vButtonContainersNonActive,
+		   {Localize("Wake up"), Localize("Granade"), Localize("Tag")},
+		   {0, 1, 2},
+		   g_Config.m_RcSoundOnMoveNonInactive);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcNotifyOnMoveInSpec, RCLocalize("Notify when moved in spec"), &g_Config.m_RcNotifyOnMoveInSpec, &Column, LineSize);
+	if(g_Config.m_RcNotifyOnMoveInSpec)
+	{
+		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_RcPlayOnMoveInSpec, RCLocalize("Play sound when moved in spec"), &g_Config.m_RcPlayOnMoveInSpec, &Column, LineSize);
+		static std::vector<CButtonContainer> s_vButtonContainersInSpec = {{}, {}, {}};
+		DoLine_RadioMenu(Column, TCLocalize("Choose sound in spec"),
+			   s_vButtonContainersInSpec,
+			   {Localize("Wake up"), Localize("Granade"), Localize("Tag")},
+			   {0, 1, 2},
+			   g_Config.m_RcSoundOnMoveInSpec);
+	}
+	else
+		Column.HSplitTop(LineSize * 2 + 2.0f, nullptr, &Column); // 2.0f for radio menu
+
+	Column.HSplitTop(MarginExtraSmall, nullptr, &Column);
+	s_SectionBoxes.back().h = Column.y - s_SectionBoxes.back().y;
+
 	// ***** END OF PAGE 1 SETTINGS ***** //
 	RightView = Column;
 

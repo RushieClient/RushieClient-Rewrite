@@ -67,8 +67,8 @@ decltype(CBindChat::BIND_DEFAULTS_RCLIENT) CBindChat::BIND_DEFAULTS_RCLIENT = {
 		{TCLocalizable("Copy Skin DDstats"), {"!copyskinddstats", "rc_copy_skin_from_ddstats"}},
 	}},
 	{TCLocalizable("Message Filter"), {
-		{TCLocalizable("Add word in filter:"), {"!findhours", "rc_find_hours"}},
-		{TCLocalizable("Remove word from filter:"), {"!findplayer", "rc_find_player"}},
+		{TCLocalizable("Add word in filter:"), {"!filteradd", "rc_message_filter_add_word"}},
+		{TCLocalizable("Remove word from filter:"), {"!filterrem", "rc_message_filter_remove_word"}},
 		}},
 	{TCLocalizable("Tracker"), {
 		{TCLocalizable("Add Tracker:"), {"!trackeradd", "rc_tracker_add"}},

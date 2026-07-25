@@ -2612,6 +2612,8 @@ if(CLIENT)
     components/rclient/edgehelper.cpp
     components/rclient/edgehelper.h
     components/rclient/menus_rclient.cpp
+    components/rclient/notify_on_move.cpp
+    components/rclient/notify_on_move.h
     components/rclient/rclient.cpp
     components/rclient/rclient.h
     components/scoreboard.cpp

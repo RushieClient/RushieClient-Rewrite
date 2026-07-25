@@ -989,7 +989,7 @@ void CPlayers::RenderPlayer(
 	float TeeAnimScale, TeeBaseSize;
 	CRenderTools::GetRenderTeeAnimScaleAndBaseSize(&RenderInfo, TeeAnimScale, TeeBaseSize);
 	vec2 BodyPos = Position + vec2(State.GetBody()->m_X, State.GetBody()->m_Y) * TeeAnimScale;
-	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN && g_Config.m_RcHideFrozenFlakesEffect)
+	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN && !g_Config.m_RcHideFrozenFlakesEffect)
 	{
 		GameClient()->m_Effects.FreezingFlakes(BodyPos, vec2(32, 32), Alpha);
 	}

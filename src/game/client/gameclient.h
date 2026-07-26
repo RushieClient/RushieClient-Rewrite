@@ -610,6 +610,9 @@ public:
 
 		// 0.7 Skin
 		CSixup m_aSixup[NUM_DUMMIES];
+
+		// RClient
+		int m_CustomClient = 0;
 	};
 
 	CClientData m_aClients[MAX_CLIENTS];

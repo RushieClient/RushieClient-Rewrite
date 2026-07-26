@@ -1648,6 +1648,9 @@ set(EXPECTED_DATA
   particles.png
   race_flag.png
   rclient/audio/nonactive_wakeup.wv
+  rclient/icons/chillerbotux_size.png
+  rclient/icons/duckicon_size.png
+  rclient/icons/kazioicon_size.png
   rclient/languages/index.txt
   rclient/languages/russian.txt
   rclient/menu_afk.png
@@ -2611,6 +2614,7 @@ if(CLIENT)
     components/race_demo.h
     components/rclient/edgehelper.cpp
     components/rclient/edgehelper.h
+    components/rclient/external/ddnet-custom-clients/custom_clients_ids.h
     components/rclient/menus_rclient.cpp
     components/rclient/notify_on_move.cpp
     components/rclient/notify_on_move.h

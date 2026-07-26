@@ -81,6 +81,9 @@
 #include <cmath>
 #include <limits>
 
+//RClient
+#include "components/rclient/external/ddnet-custom-clients/custom_clients_ids.h"
+
 using namespace std::chrono_literals;
 
 const char *CGameClient::Version() const { return GAME_VERSION; }
@@ -1803,6 +1806,20 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_UseCustomColor = pInfo->m_UseCustomColor;
 					pClient->m_ColorBody = pInfo->m_ColorBody;
 					pClient->m_ColorFeet = pInfo->m_ColorFeet;
+					//RClient
+					if(g_Config.m_RcCustomClientsCollectClientType)
+					{
+						if(MACRO_IS_SKIN_COLOR_CCID(pClient->m_ColorBody, pClient->m_ColorFeet, CCID_COLOR_BODY_KAIZO_CLIENT, CCID_COLOR_FEET_KAIZO_CLIENT))
+							pClient->m_CustomClient = CUSTOM_CLIENT_ID_KAIZO_NETWORK;
+						else if(MACRO_IS_SKIN_COLOR_CCID(pClient->m_ColorBody, pClient->m_ColorFeet, CCID_COLOR_BODY_CHILLERBOTUX, CCID_COLOR_FEET_CHILLERBOTUX))
+							pClient->m_CustomClient = CUSTOM_CLIENT_ID_CHILLERBOTUX;
+						else if(MACRO_IS_SKIN_COLOR_CCID(pClient->m_ColorBody, pClient->m_ColorFeet, CCID_COLOR_BODY_PDUCKCLIENT, CCID_COLOR_FEET_PDUCKCLIENT))
+							pClient->m_CustomClient = CUSTOM_CLIENT_ID_PDUCKCLIENT;
+						else
+							pClient->m_CustomClient = 0;
+					}
+					else
+						pClient->m_CustomClient = 0;
 				}
 			}
 			else if(Item.m_Type == NETOBJTYPE_PLAYERINFO)
@@ -3580,6 +3597,8 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
+		if(g_Config.m_RcCustomClientsSendClientType && false)
+			MACRO_INSERT_CCID_INTO_SKIN_COLOR(Msg.m_ColorBody, Msg.m_ColorFeet, CCID_COLOR_BODY_KAIZO_CLIENT, CCID_COLOR_FEET_KAIZO_CLIENT)
 		CMsgPacker Packer(&Msg);
 		Msg.Pack(&Packer);
 		Client()->SendMsg(IClient::CONN_MAIN, &Packer, MSGFLAG_VITAL | MSGFLAG_FLUSH);
@@ -3595,6 +3614,8 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
+		if(g_Config.m_RcCustomClientsSendClientType && false)
+			MACRO_INSERT_CCID_INTO_SKIN_COLOR(Msg.m_ColorBody, Msg.m_ColorFeet, CCID_COLOR_BODY_KAIZO_CLIENT, CCID_COLOR_FEET_KAIZO_CLIENT)
 		CMsgPacker Packer(&Msg);
 		Msg.Pack(&Packer);
 		Client()->SendMsg(IClient::CONN_MAIN, &Packer, MSGFLAG_VITAL);
@@ -3622,6 +3643,8 @@ void CGameClient::SendDummyInfo(bool Start)
 		Msg.m_UseCustomColor = g_Config.m_ClDummyUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClDummyColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClDummyColorFeet;
+		if(g_Config.m_RcCustomClientsSendClientType && false)
+			MACRO_INSERT_CCID_INTO_SKIN_COLOR(Msg.m_ColorBody, Msg.m_ColorFeet, CCID_COLOR_BODY_KAIZO_CLIENT, CCID_COLOR_FEET_KAIZO_CLIENT)
 		CMsgPacker Packer(&Msg);
 		Msg.Pack(&Packer);
 		Client()->SendMsg(IClient::CONN_DUMMY, &Packer, MSGFLAG_VITAL);
@@ -3637,6 +3660,8 @@ void CGameClient::SendDummyInfo(bool Start)
 		Msg.m_UseCustomColor = g_Config.m_ClDummyUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClDummyColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClDummyColorFeet;
+		if(g_Config.m_RcCustomClientsSendClientType && false)
+			MACRO_INSERT_CCID_INTO_SKIN_COLOR(Msg.m_ColorBody, Msg.m_ColorFeet, CCID_COLOR_BODY_KAIZO_CLIENT, CCID_COLOR_FEET_KAIZO_CLIENT)
 		CMsgPacker Packer(&Msg);
 		Msg.Pack(&Packer);
 		Client()->SendMsg(IClient::CONN_DUMMY, &Packer, MSGFLAG_VITAL);

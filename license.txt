@@ -265,3 +265,9 @@ be used in advertising or otherwise to promote the sale, use or other
 dealings in this Font Software without prior written authorization
 from Tavmjong Bah. For further information, contact: tavmjong @ free
 . fr.
+
+ddnet-custom-clients:
+---------------------
+Copyright (C) Benjamín Gajardo
+Licensed under LGPL-3.0-or-later
+https://github.com/M0REKZ/ddnet-custom-clients
